@@ -1,8 +1,27 @@
 # The Weekly Funnel Digest
 
+## Make it yours
+
+This is a starting point, not a finished product. It was built for one person's work, and every rule in it is meant to be changed to fit yours. Nothing in here is precious.
+
+- Fill in the `[BRACKETED]` placeholders in [`PROMPT.md`](PROMPT.md) with your own details.
+- Read [`FEATURES.md`](FEATURES.md). It explains each feature, why it's there, and which part of the prompt to edit to turn it off, loosen it or swap it.
+- Edit the prompt in plain words. If a rule doesn't fit how you work, rewrite it or delete it.
+- Run it once by hand after every change and read what comes back.
+
 An agent that pulls last week's numbers straight from the native APIs (Google Analytics, Meta and Instagram, plus the platforms you read by hand), writes them into one living dashboard page every Saturday morning, and says where the funnel is leaking. No connector subscription, no four tabs open on a Friday.
 
 This repo is the same five steps as the guide at [theoptimized.ceo/guides/funnel-digest](https://www.theoptimized.ceo/guides/funnel-digest), with the prompt in [`PROMPT.md`](PROMPT.md) and the pull script in [`native_pull.py`](native_pull.py).
+
+## Features
+
+- Pulls straight from Google Analytics, Instagram, Pinterest and TikTok, no Supermetrics
+- Tells you where the funnel is leaking
+- Refreshes the live dashboard every week
+
+**Who it's for:** small businesses paying for an analytics tool they open once a month.
+
+**What it replaces:** a $100-a-month connector and a spreadsheet.
 
 ## You need
 
@@ -71,6 +90,7 @@ Run it once now rather than waiting for Saturday. The first refresh is a test of
 
 | File | What it is |
 | --- | --- |
+| `FEATURES.md` | Each feature, why it's there, and which part of the prompt to edit to change it |
 | `PROMPT.md` | The scheduled task prompt, with `[bracket]` placeholders for your details |
 | `native_pull.py` | The pull script: `ga4` mode for the GA4 Data API, `ig` mode for the Meta Graph API, plain JSON out |
 | `sources.example.md` | The shape of your sources list, stage by stage, and the one page they feed |

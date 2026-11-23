@@ -14,7 +14,7 @@ Two kinds of source:
 | Attract | Pinterest | saved stats, read within the last 3 days | (browser read) |
 | Attract | TikTok | saved stats, read within the last 3 days | (browser read) |
 | Attract | Paid ads, [YOUR CAMPAIGN NAME] only | ads connector | [your ads platform] |
-| Capture | [free call / masterclass / pricing guide] | email platform connector | [your email platform] |
+| Capture | [your free offer or lead magnet] | email platform connector | [your email platform] |
 | Nurture | [your email automations] | email platform connector | [your email platform] |
 | Convert | [calls booked / sales] | [where you count them] | [source] |
 | Keep and Refer | [no referral automation yet] | GAP, say so in a box | n/a |
