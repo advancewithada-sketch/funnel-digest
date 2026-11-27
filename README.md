@@ -76,7 +76,7 @@ Put the script and both secrets in one private folder the agent can fetch from (
 
 ### 3. Build the dashboard page once
 
-The agent updates a page; it does not design one. So design it first, by hand, with the numbers you have today. Five funnel columns across the top (attract, capture, nurture, convert, keep and refer), one box per source or offer inside each column, and under it a KPI table with six columns: KPI, this week, this month, this quarter, total, insight. Build it in whatever you can edit as HTML and the agent can read and republish in place: a Claude artifact, a page in your site, a file in a folder. Boxes do not come and go. Each source is labelled by where its number came from. Known gaps get a box that says so. Give the page a "week of" date range in the title block; the agent moves that range every Saturday.
+The agent updates a page; it does not design one. So design it first, by hand, with the numbers you have today. [`dashboard.html`](dashboard.html) is a ready-made starting point (see [The dashboard](#the-dashboard)). Five funnel columns across the top (attract, capture, nurture, convert, keep and refer), one box per source or offer inside each column, and under it a KPI table with six columns: KPI, this week, this month, this quarter, total, insight. Build it in whatever you can edit as HTML and the agent can read and republish in place: a Claude artifact, a page in your site, a file in a folder. Boxes do not come and go. Each source is labelled by where its number came from. Known gaps get a box that says so. Give the page a "week of" date range in the title block; the agent moves that range every Saturday.
 
 ### 4. Create the Saturday agent
 
@@ -86,10 +86,23 @@ In Claude Code, open Scheduled tasks and create a new one. Paste the prompt from
 
 Run it once now rather than waiting for Saturday. The first refresh is a test of your access, not your marketing: it tells you whether the key works, whether the token works, and which boxes you built that no source can fill. Fix those in the folder or on the page, not in the prompt, and run it again. From the second run on, read the page top to bottom once a week, starting with the insight column, because that is where the agent names the stage where numbers fall off most. The page points; you choose. What you do about it is yours, and the agent will show you next Saturday whether it worked.
 
+## The dashboard
+
+[`dashboard.html`](dashboard.html) is a blank copy of the page the agent fills in: five funnel columns (Attract, Capture, Nurture, Convert, Keep and Refer) with one box per source, each labelled by where its number comes from ("GA4 (native)", "Instagram (native)", "(browser read)"), then the KPI table (KPI | This week | This month | This quarter | Total | Insight), status lines for anything stale, paused or missing, field notes, and a "week of" range in the title block. Every number is a `[number]` placeholder.
+
+It is plain static HTML with no scripts. Every spot the agent edits is labelled with a `data-` attribute (`data-stage`, `data-source`, `data-status`, `data-field`, `data-kpi`, `data-col`), and the comment at the top of the file lists them.
+
+1. Replace the `[BRACKETS]` with your own sources and offers. Rename, add or delete boxes and rows now, while you are building it; after that the agent leaves the shape alone.
+2. Publish it once, as a Claude artifact or any page the agent can read and edit in place.
+3. Put its address in [`PROMPT.md`](PROMPT.md) as `[WHERE YOUR DASHBOARD PAGE LIVES]`.
+
+From then on the agent fills the same page in place every Saturday: it moves the "week of" range, replaces the numbers, sets each source's status and writes the Insight column. It never rebuilds the page or makes a second copy.
+
 ## Files
 
 | File | What it is |
 | --- | --- |
+| `dashboard.html` | The dashboard template: funnel columns, KPI table and status lines with `[number]` placeholders and labelled regions the agent edits |
 | `FEATURES.md` | Each feature, why it's there, and which part of the prompt to edit to change it |
 | `PROMPT.md` | The scheduled task prompt, with `[bracket]` placeholders for your details |
 | `native_pull.py` | The pull script: `ga4` mode for the GA4 Data API, `ig` mode for the Meta Graph API, plain JSON out |
@@ -98,3 +111,5 @@ Run it once now rather than waiting for Saturday. The first refresh is a test of
 ## Shared as-is
 
 This is the digest exactly as it runs for one Fractional COO, with names and IDs taken out. No support, no roadmap. Fork it and make it yours.
+
+Made by Ada from [theoptimized.ceo](https://www.theoptimized.ceo).

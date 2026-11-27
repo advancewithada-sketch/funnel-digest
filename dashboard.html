@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Weekly Funnel Dashboard</title>
+<!--
+  WEEKLY FUNNEL DIGEST: DASHBOARD TEMPLATE
+
+  Static HTML. No scripts, no database, no external files. The Saturday agent
+  in PROMPT.md reads this page and edits it in place, so the markup is plain
+  and every editable spot is labelled:
+
+    data-region="..."   a block of the page (title, funnel, kpis, status, notes, footer)
+    data-stage="..."    a funnel column: attract | capture | nurture | convert | keep-refer
+    data-source="..."   one source or offer box inside a column
+    data-status="..."   the box or chip state: live | stale | paused | gap | planned
+    data-field="..."    one value the agent replaces (week-of, refreshed, stale-line, ...)
+    data-kpi="..."      one KPI table row
+    data-col="..."      one KPI cell: week | month | quarter | total | insight
+
+  Rules for the agent (same as PROMPT.md STEP 2 and STEP 4):
+    - Replace text inside data-field elements and KPI cells. Keep every element and attribute.
+    - Change data-status when a source goes stale, pauses or comes back.
+    - Do not add, remove or reorder boxes, rows or columns. Gaps keep their box.
+    - Every number says where it came from: "GA4 (native)", "Instagram (native)", "(browser read)".
+
+  To make it yours: replace every [BRACKET], rename or delete boxes and rows to
+  match your funnel, then publish it once and put its address in PROMPT.md as
+  [WHERE YOUR DASHBOARD PAGE LIVES].
+-->
+<style>
+  :root{
+    --bg:#f6f6f4;
+    --panel:#ffffff;
+    --panel-2:#efefec;
+    --line:#dcdcd7;
+    --ink:#1c1c1a;
+    --muted:#5c5c57;
+    --dim:#85857f;
+    --accent:#2f5d8a;
+    --live:#2e7d5b;
+    --live-bg:#e6f2ec;
+    --stale:#b4432f;
+    --stale-bg:#f8e7e3;
+    --paused:#9a6a12;
+    --paused-bg:#f6eedb;
+    --planned:#6b5bb0;
+    --planned-bg:#eeebf7;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#141414;
+      --panel:#1d1d1c;
+      --panel-2:#262625;
+      --line:#353533;
+      --ink:#ececea;
+      --muted:#a9a9a3;
+      --dim:#7d7d78;
+      --accent:#86b2dc;
+      --live:#6fc79d;
+      --live-bg:#1b2e25;
+      --stale:#ee8a76;
+      --stale-bg:#371f1a;
+      --paused:#e0b45c;
+      --paused-bg:#33291a;
+      --planned:#b2a6ec;
+      --planned-bg:#28243b;
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#141414;
+    --panel:#1d1d1c;
+    --panel-2:#262625;
+    --line:#353533;
+    --ink:#ececea;
+    --muted:#a9a9a3;
+    --dim:#7d7d78;
+    --accent:#86b2dc;
+    --live:#6fc79d;
+    --live-bg:#1b2e25;
+    --stale:#ee8a76;
+    --stale-bg:#371f1a;
+    --paused:#e0b45c;
+    --paused-bg:#33291a;
+    --planned:#b2a6ec;
+    --planned-bg:#28243b;
+    color-scheme:dark;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font:15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding:0 16px;
+    overflow-x:hidden;
+  }
+  .mono{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .sheet{ max-width:1180px; margin:0 auto; padding:32px 0 48px; }
+
+  /* Title block */
+  .titleblock{ border-bottom:1px solid var(--line); padding-bottom:16px; margin-bottom:28px; }
+  .titleblock h1{ margin:0 0 4px; font-size:22px; line-height:1.25; text-wrap:balance; }
+  .titleblock .sub{ margin:0 0 14px; color:var(--muted); font-size:14px; }
+  .stamp{
+    display:flex; flex-wrap:wrap; gap:4px 20px;
+    font-size:12px; color:var(--muted);
+    background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:8px 12px;
+  }
+  .stamp b{ color:var(--ink); font-weight:600; margin-right:6px; }
+  .stamp .warn{ color:var(--stale); }
+
+  h2{ font-size:13px; font-weight:650; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin:0 0 6px; }
+  .desc{ margin:0 0 16px; color:var(--muted); font-size:14px; max-width:75ch; }
+  section{ margin:0 0 40px; }
+
+  /* Funnel */
+  .funnel{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
+  .stage{ min-width:0; display:flex; flex-direction:column; gap:10px; }
+  .stage > h3{
+    margin:0; font-size:12px; font-weight:650; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
+    padding-bottom:6px; border-bottom:2px solid var(--line);
+  }
+  .box{
+    background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--dim);
+    border-radius:6px; padding:10px 12px; font-size:13px; min-width:0; overflow-wrap:anywhere;
+  }
+  .box h4{ margin:0 0 4px; font-size:14px; font-weight:650; }
+  .box p{ margin:0; color:var(--muted); }
+  .box .origin{ margin-top:6px; font-size:11.5px; font-weight:600; letter-spacing:.02em; }
+  .box[data-status="live"]{ border-left-color:var(--live); }
+  .box[data-status="live"] .origin{ color:var(--live); }
+  .box[data-status="stale"]{ border-left-color:var(--stale); background:var(--stale-bg); }
+  .box[data-status="stale"] .origin{ color:var(--stale); }
+  .box[data-status="paused"]{ border-left-color:var(--paused); background:var(--paused-bg); }
+  .box[data-status="paused"] .origin{ color:var(--paused); }
+  .box[data-status="gap"]{ border:1px dashed var(--stale); border-left:4px dashed var(--stale); }
+  .box[data-status="gap"] .origin{ color:var(--stale); }
+  .box[data-status="planned"]{ border:1px dashed var(--planned); border-left:4px dashed var(--planned); background:var(--planned-bg); }
+  .box[data-status="planned"] .origin{ color:var(--planned); }
+
+  .key{ display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:16px; font-size:12.5px; color:var(--muted); }
+  .key span{ display:inline-flex; align-items:center; gap:8px; }
+  .key i{ display:inline-block; width:14px; height:14px; border-radius:3px; border:2px solid; }
+
+  /* KPI table: scrolls inside its own container, never the page */
+  .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; background:var(--panel); border:1px solid var(--line); border-radius:6px; margin-bottom:16px; }
+  table{ width:100%; min-width:760px; border-collapse:collapse; font-size:13px; }
+  th{ text-align:left; font-size:11px; font-weight:650; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); padding:9px 12px; border-bottom:1px solid var(--line); white-space:nowrap; background:var(--panel-2); }
+  td{ padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tr:last-child td{ border-bottom:0; }
+  td.metric{ font-weight:600; border-left:3px solid var(--dim); }
+  td.metric small{ display:block; font-weight:400; font-size:11.5px; color:var(--dim); margin-top:2px; }
+  td.num{ font-variant-numeric:tabular-nums; min-width:120px; }
+  td.insight{ color:var(--muted); min-width:220px; }
+  tr[data-status="live"] td.metric{ border-left-color:var(--live); }
+  tr[data-status="stale"] td.metric{ border-left-color:var(--stale); }
+  tr[data-status="stale"] td.num{ color:var(--stale); }
+  tr[data-status="gap"] td.metric{ border-left-color:var(--stale); }
+
+  /* Status chips */
+  .status{ display:flex; flex-wrap:wrap; gap:10px; }
+  .chip{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 9px; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--dim); border-radius:6px; padding:8px 12px; font-size:13px; max-width:100%; }
+  .chip .tag{ font-size:10.5px; font-weight:700; letter-spacing:.04em; border-radius:3px; padding:2px 6px; }
+  .chip .note{ color:var(--muted); }
+  .chip[data-status="live"]{ border-left-color:var(--live); } .chip[data-status="live"] .tag{ color:var(--live); background:var(--live-bg); }
+  .chip[data-status="stale"]{ border-left-color:var(--stale); } .chip[data-status="stale"] .tag{ color:var(--stale); background:var(--stale-bg); }
+  .chip[data-status="paused"]{ border-left-color:var(--paused); } .chip[data-status="paused"] .tag{ color:var(--paused); background:var(--paused-bg); }
+  .chip[data-status="gap"]{ border-left-color:var(--stale); } .chip[data-status="gap"] .tag{ color:var(--stale); background:var(--stale-bg); }
+
+  /* Notes */
+  .notes{ background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:6px; padding:18px 20px; }
+  .notes p{ margin:0 0 12px; max-width:80ch; }
+  .notes p:last-child{ margin-bottom:0; }
+
+  footer{ margin-top:32px; padding-top:14px; border-top:1px solid var(--line); font-size:12.5px; color:var(--dim); display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 16px; }
+  footer a{ color:var(--accent); }
+
+  @media (max-width:520px){
+    .sheet{ padding-top:20px; }
+    .titleblock h1{ font-size:19px; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <!-- REGION: title. The agent moves week-of every Saturday and updates refreshed, sources and stale-line. -->
+  <header class="titleblock" data-region="title">
+    <h1 data-field="dashboard-name">[YOUR DASHBOARD NAME]</h1>
+    <p class="sub">[Your business] · the five-stage funnel as it runs today.</p>
+    <div class="stamp mono">
+      <div><b>WEEK OF</b><span data-field="week-of">[YYYY-MM-DD] to [YYYY-MM-DD]</span></div>
+      <div><b>REFRESHED</b><span data-field="refreshed">[YYYY-MM-DD]</span></div>
+      <div><b>SOURCES</b><span data-field="sources">GA4 (native) · Instagram (native) · [Email platform] · [Ads platform] · [Platform A], [Platform B] (browser read)</span></div>
+      <div class="warn"><b>STALE</b><span data-field="stale-line">[Platform B] stale since [YYYY-MM-DD]: [short error]</span></div>
+    </div>
+  </header>
+
+  <!-- REGION: funnel. Five columns. One box per source or offer. Boxes never come and go. -->
+  <section data-region="funnel">
+    <h2>The funnel</h2>
+    <p class="desc" data-field="funnel-summary">Where people come from, where they sign up, how they are followed up, where they buy, and whether they come back or refer. Each box says where its number came from.</p>
+
+    <div class="funnel">
+
+      <!-- STAGE: attract -->
+      <div class="stage" data-stage="attract">
+        <h3>Attract</h3>
+
+        <div class="box" data-source="website" data-status="live">
+          <h4>[yourwebsite.com]</h4>
+          <p data-field="website-7d">[number] sessions · [number] users (7d)</p>
+          <p data-field="website-top-pages">Top pages (7d): [page] [number] · [page] [number] · [page] [number]</p>
+          <p data-field="website-channels">Direct [number] · Organic Social [number] · Organic Search [number]</p>
+          <p class="origin" data-field="website-origin">GA4 (native) · [number] sessions (30d)</p>
+        </div>
+
+        <div class="box" data-source="instagram" data-status="live">
+          <h4>Instagram</h4>
+          <p data-field="instagram-followers">[number] followers · [+number] (7d)</p>
+          <p data-field="instagram-7d">7d: [number] reach · [number] engaged · [number] interactions</p>
+          <p class="origin" data-field="instagram-origin">Instagram (native) · 30d reach [number]</p>
+        </div>
+
+        <div class="box" data-source="platform-a" data-status="live">
+          <h4>[Platform A]</h4>
+          <p data-field="platform-a-stats">[number] followers · [number] impressions (page label: last 7 days)</p>
+          <p class="origin" data-field="platform-a-origin">(browser read) · [YYYY-MM-DD]</p>
+        </div>
+
+        <div class="box" data-source="platform-b" data-status="stale">
+          <h4>[Platform B]</h4>
+          <p data-field="platform-b-stats">[number] followers · [number] impressions (from [YYYY-MM-DD])</p>
+          <p class="origin" data-field="platform-b-origin">(browser read) · stale since [YYYY-MM-DD]: [short error]</p>
+        </div>
+
+        <div class="box" data-source="paid-ads" data-status="paused">
+          <h4>Paid ads: [Your campaign name]</h4>
+          <p data-field="paid-ads-7d">7d: [currency][number] spend · [number] impressions · [number] clicks · [number]% CTR</p>
+          <p class="origin" data-field="paid-ads-origin">[Ads platform] · paused since [YYYY-MM-DD]</p>
+        </div>
+      </div>
+
+      <!-- STAGE: capture -->
+      <div class="stage" data-stage="capture">
+        <h3>Capture</h3>
+
+        <div class="box" data-source="discovery-call" data-status="live">
+          <h4>[Your free call]</h4>
+          <p>Booked from [yourwebsite.com/book]</p>
+          <p data-field="discovery-call-sessions">Page: [number] sessions (7d) · [number] (30d)</p>
+          <p class="origin" data-field="discovery-call-origin">GA4 (native)</p>
+        </div>
+
+        <div class="box" data-source="lead-magnet" data-status="live">
+          <h4>[Your lead magnet]</h4>
+          <p data-field="lead-magnet-optins">[number] opt-ins (7d) · [number] (30d)</p>
+          <p data-field="lead-magnet-sessions">Page: [number] sessions (7d)</p>
+          <p class="origin" data-field="lead-magnet-origin">[Email platform] + GA4 (native)</p>
+        </div>
+
+        <div class="box" data-source="planned-capture" data-status="planned">
+          <h4>[Your planned opt-in]</h4>
+          <p>Page exists, not wired to a list yet</p>
+          <p class="origin" data-field="planned-capture-origin">PLANNED · no live source</p>
+        </div>
+      </div>
+
+      <!-- STAGE: nurture -->
+      <div class="stage" data-stage="nurture">
+        <h3>Nurture</h3>
+
+        <div class="box" data-source="welcome-sequence" data-status="live">
+          <h4>[Your welcome sequence]</h4>
+          <p data-field="welcome-sequence-stats">[number] entered (7d) · [number]% open</p>
+          <p class="origin" data-field="welcome-sequence-origin">[Email platform]</p>
+        </div>
+
+        <div class="box" data-source="lead-magnet-delivery" data-status="live">
+          <h4>[Your lead magnet] delivery</h4>
+          <p data-field="lead-magnet-delivery-stats">[number] entered (7d) · [number]% open</p>
+          <p class="origin" data-field="lead-magnet-delivery-origin">[Email platform]</p>
+        </div>
+
+        <div class="box" data-source="newsletter" data-status="live">
+          <h4>Newsletter</h4>
+          <p data-field="newsletter-stats">[number] sends (7d) · last send [YYYY-MM-DD]</p>
+          <p class="origin" data-field="newsletter-origin">[Email platform]</p>
+        </div>
+      </div>
+
+      <!-- STAGE: convert -->
+      <div class="stage" data-stage="convert">
+        <h3>Convert</h3>
+
+        <div class="box" data-source="core-offer" data-status="live">
+          <h4>[Your offer]</h4>
+          <p data-field="core-offer-sessions">Page: [number] sessions (7d) · [number] (total)</p>
+          <p data-field="core-offer-sales">[number] calls booked · [number] sales (7d)</p>
+          <p class="origin" data-field="core-offer-origin">GA4 (native) + [where you count sales]</p>
+        </div>
+
+        <div class="box" data-source="entry-offer" data-status="live">
+          <h4>[Your entry offer]</h4>
+          <p data-field="entry-offer-sessions">Page: [number] sessions (7d) · [number] (total)</p>
+          <p class="origin" data-field="entry-offer-origin">GA4 (native)</p>
+        </div>
+      </div>
+
+      <!-- STAGE: keep-refer -->
+      <div class="stage" data-stage="keep-refer">
+        <h3>Keep and refer</h3>
+
+        <div class="box" data-source="referral" data-status="gap">
+          <h4>No referral automation yet</h4>
+          <p>Nothing asks happy clients for a referral</p>
+          <p class="origin">GAP · real, not just untracked</p>
+        </div>
+
+        <div class="box" data-source="list-health" data-status="live">
+          <h4>List health</h4>
+          <p data-field="list-health-size">[number] total · [number] active</p>
+          <p data-field="list-health-rates">[number]% open · [number]% unsub · [number]% bounce (total)</p>
+          <p class="origin" data-field="list-health-origin">[Email platform]</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="key">
+      <span><i style="border-color:var(--live)"></i>pulled this week</span>
+      <span><i style="border-color:var(--stale);background:var(--stale-bg)"></i>stale or broken</span>
+      <span><i style="border-color:var(--paused);background:var(--paused-bg)"></i>paused</span>
+      <span><i style="border-color:var(--stale);border-style:dashed"></i>known gap</span>
+      <span><i style="border-color:var(--planned);border-style:dashed;background:var(--planned-bg)"></i>planned, no live source</span>
+    </div>
+  </section>
+
+  <!-- REGION: kpis. Six columns, fixed. The agent edits cell text and the row's data-status only. -->
+  <section data-region="kpis">
+    <h2>KPI snapshot</h2>
+    <p class="desc mono" data-field="kpi-asof">Refreshed [YYYY-MM-DD]. "This week" = [YYYY-MM-DD] to [YYYY-MM-DD]; "this month" = last 30 days; "this quarter" = last 90 days. Browser reads keep their own page labels.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>KPI</th><th>This week</th><th>This month</th><th>This quarter</th><th>Total</th><th>Insight</th></tr>
+        </thead>
+        <tbody>
+          <tr data-kpi="email-subscribers" data-status="live">
+            <td class="metric">Email subscribers<small>[Email platform]</small></td>
+            <td class="num" data-col="week">[number] active ([+number])</td>
+            <td class="num" data-col="month">[number]</td>
+            <td class="num" data-col="quarter">[number]</td>
+            <td class="num" data-col="total">[number] active</td>
+            <td class="insight" data-col="insight">[One plain line on what moved and why.]</td>
+          </tr>
+          <tr data-kpi="email-sends" data-status="live">
+            <td class="metric">Campaigns sent<small>[Email platform]</small></td>
+            <td class="num" data-col="week">[number]</td>
+            <td class="num" data-col="month">[number] across [number]</td>
+            <td class="num" data-col="quarter">[number] across [number]</td>
+            <td class="num" data-col="total">[number] across [number]</td>
+            <td class="insight" data-col="insight">[One plain line.]</td>
+          </tr>
+          <tr data-kpi="email-open-rate" data-status="live">
+            <td class="metric">Open rate<small>[Email platform]</small></td>
+            <td class="num" data-col="week">[number]%</td>
+            <td class="num" data-col="month">[number]%</td>
+            <td class="num" data-col="quarter">[number]%</td>
+            <td class="num" data-col="total">[number]%</td>
+            <td class="insight" data-col="insight">[One plain line.]</td>
+          </tr>
+          <tr data-kpi="email-unsub-rate" data-status="live">
+            <td class="metric">Unsubscribe and bounce rate<small>[Email platform]</small></td>
+            <td class="num" data-col="week">[number]% · [number]%</td>
+            <td class="num" data-col="month">[number]% · [number]%</td>
+            <td class="num" data-col="quarter">[number]% · [number]%</td>
+            <td class="num" data-col="total">[number]% · [number]%</td>
+            <td class="insight" data-col="insight">[One plain line.]</td>
+          </tr>
+          <tr data-kpi="website-sessions" data-status="live">
+            <td class="metric">Website sessions<small>GA4 (native) · [number] users (7d)</small></td>
+            <td class="num" data-col="week">[number] (vs [number] prior 7d)</td>
+            <td class="num" data-col="month">[number]</td>
+            <td class="num" data-col="quarter">[number]</td>
+            <td class="num" data-col="total">[number]</td>
+            <td class="insight" data-col="insight">[One plain line. If windows match because the property is new, say so.]</td>
+          </tr>
+          <tr data-kpi="offer-page-sessions" data-status="live">
+            <td class="metric">Offer and capture page sessions<small>GA4 (native)</small></td>
+            <td class="num" data-col="week">[Your lead magnet] [number] · [Your offer] [number]</td>
+            <td class="num" data-col="month">[Your lead magnet] [number] · [Your offer] [number]</td>
+            <td class="num" data-col="quarter">[Your lead magnet] [number] · [Your offer] [number]</td>
+            <td class="num" data-col="total">[Your lead magnet] [number] · [Your offer] [number]</td>
+            <td class="insight" data-col="insight">[One plain line.]</td>
+          </tr>
+          <tr data-kpi="instagram-followers" data-status="live">
+            <td class="metric">Instagram followers<small>Instagram (native)</small></td>
+            <td class="num" data-col="week">[number] ([+number])</td>
+            <td class="num" data-col="month">[number] ([+number])</td>
+            <td class="num" data-col="quarter">n/a (Meta caps at 30 days)</td>
+            <td class="num" data-col="total">[number]</td>
+            <td class="insight" data-col="insight">[One plain line.]</td>
+          </tr>
+          <tr data-kpi="instagram-reach" data-status="live">
+            <td class="metric">Instagram reach<small>Instagram (native) · unique accounts per window</small></td>
+            <td class="num" data-col="week">[number]</td>
+            <td class="num" data-col="month">[number]</td>
+            <td class="num" data-col="quarter">n/a (Meta caps at 30 days)</td>
+            <td class="num" data-col="total">n/a (Meta caps at 30 days)</td>
+            <td class="insight" data-col="insight">[One plain line. Reach does not add up across windows.]</td>
+          </tr>
+          <tr data-kpi="instagram-engaged" data-status="live">
+            <td class="metric">Instagram accounts engaged<small>Instagram (native)</small></td>
+            <td class="num" data-col="week">[number]</td>
+            <td class="num" data-col="month">[number]</td>
+            <td class="num" data-col="quarter">n/a (Meta caps at 30 days)</td>
+            <td class="num" data-col="total">n/a (Meta caps at 30 days)</td>
+            <td class="insight" data-col="insight">[One plain line.]</td>
+          </tr>
+          <tr data-kpi="platform-a" data-status="live">
+            <td class="metric">[Platform A]<small>(browser read) · [YYYY-MM-DD]</small></td>
+            <td class="num" data-col="week">[number] ([page label])</td>
+            <td class="num" data-col="month">n/a (7-day read only)</td>
+            <td class="num" data-col="quarter">n/a</td>
+            <td class="num" data-col="total">[number] followers</td>
+            <td class="insight" data-col="insight">[One plain line. Page labels are quoted, not computed.]</td>
+          </tr>
+          <tr data-kpi="platform-b" data-status="stale">
+            <td class="metric">[Platform B]<small>(browser read) · stale since [YYYY-MM-DD]</small></td>
+            <td class="num" data-col="week">[number] (from [YYYY-MM-DD])</td>
+            <td class="num" data-col="month">n/a</td>
+            <td class="num" data-col="quarter">n/a</td>
+            <td class="num" data-col="total">n/a</td>
+            <td class="insight" data-col="insight">[Why it is stale, in one line.]</td>
+          </tr>
+          <tr data-kpi="paid-ads" data-status="live">
+            <td class="metric">Paid ads: [Your campaign name]<small>[Ads platform]</small></td>
+            <td class="num" data-col="week">[currency][number] · [number] clicks · [number]% CTR</td>
+            <td class="num" data-col="month">[currency][number]</td>
+            <td class="num" data-col="quarter">[currency][number]</td>
+            <td class="num" data-col="total">[currency][number]</td>
+            <td class="insight" data-col="insight">[One plain line.]</td>
+          </tr>
+          <tr data-kpi="biggest-leak" data-status="live">
+            <td class="metric">Biggest drop-off<small>stage to stage</small></td>
+            <td class="num" data-col="week">[Stage] to [Stage]</td>
+            <td class="num" data-col="month">[Stage] to [Stage]</td>
+            <td class="num" data-col="quarter">[Stage] to [Stage]</td>
+            <td class="num" data-col="total">n/a</td>
+            <td class="insight" data-col="insight">[Name the stage where numbers fall off most, in one line.]</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- REGION: status. One chip per source state. The agent updates tag text, note and data-status. -->
+    <div class="status" data-region="status">
+      <div class="chip" data-source="website" data-status="live"><span class="tag">LIVE</span>GA4<span class="note" data-field="status-website">native, pulled [YYYY-MM-DD]</span></div>
+      <div class="chip" data-source="instagram" data-status="live"><span class="tag">LIVE</span>Instagram<span class="note" data-field="status-instagram">native, pulled [YYYY-MM-DD]</span></div>
+      <div class="chip" data-source="platform-a" data-status="live"><span class="tag">LIVE</span>[Platform A]<span class="note" data-field="status-platform-a">browser read [YYYY-MM-DD], ok</span></div>
+      <div class="chip" data-source="platform-b" data-status="stale"><span class="tag">STALE</span>[Platform B]<span class="note" data-field="status-platform-b">since [YYYY-MM-DD]: [short error]</span></div>
+      <div class="chip" data-source="paid-ads" data-status="paused"><span class="tag">PAUSED</span>Paid ads<span class="note" data-field="status-paid-ads">[currency]0 spend in 7 days</span></div>
+      <div class="chip" data-source="referral" data-status="gap"><span class="tag">GAP</span>Referral automation<span class="note">not built yet</span></div>
+    </div>
+  </section>
+
+  <!-- REGION: notes. Short dated paragraphs in plain prose. The agent rewrites these each week to match the numbers above. -->
+  <section data-region="notes">
+    <h2>Field notes</h2>
+    <div class="notes">
+      <p data-field="note-leak"><strong>Where it leaks this week.</strong> [One or two sentences naming the stage where numbers fall off most, with the two numbers that show it.]</p>
+      <p data-field="note-attract"><strong>Attract.</strong> [What moved in traffic and followers, and from which source.]</p>
+      <p data-field="note-capture-nurture"><strong>Capture and nurture.</strong> [Opt-ins, sends and opens in plain words.]</p>
+      <p data-field="note-stale"><strong>Stale or broken.</strong> [Each stale source, since when, and the short error. Delete the line when nothing is stale.]</p>
+    </div>
+  </section>
+
+  <footer data-region="footer">
+    <span>Made by Ada from <a href="https://www.theoptimized.ceo">theoptimized.ceo</a></span>
+    <span class="mono">Week of <span data-field="footer-week-of">[YYYY-MM-DD] to [YYYY-MM-DD]</span></span>
+  </footer>
+
+</div>
+</body>
+</html>
