@@ -185,6 +185,14 @@
     .sheet{ padding-top:20px; }
     .titleblock h1{ font-size:19px; }
   }
+.start{background:var(--card,var(--panel,#fff));border:1px solid var(--line,#d8d8d8);border-left:3px solid var(--accent,#3b5b8c);border-radius:0 10px 10px 0;padding:16px 20px;margin:18px 0}
+.start-k{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent,#3b5b8c);font-weight:600;margin-bottom:8px}
+.start-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.start h3{font-size:15px;margin:0 0 4px}
+.start p{margin:0 0 8px;font-size:14px;line-height:1.55}
+.start code{font-size:12px;padding:1px 5px;border-radius:4px;background:var(--wash,rgba(127,127,127,.12))}
+.start-tip{font-size:13px!important;opacity:.85}
+@media (max-width:640px){.start-cols{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -201,6 +209,22 @@
       <div class="warn"><b>STALE</b><span data-field="stale-line">[Platform B] stale since [YYYY-MM-DD]: [short error]</span></div>
     </div>
   </header>
+
+  <!-- Start here card: setup help for whoever installs this. The weekly agent never edits it. -->
+  <aside class="start" aria-label="Start here">
+    <div class="start-k">Start here: get your numbers in</div>
+    <div class="start-cols">
+      <div>
+        <h3>Connect your accounts (it runs itself)</h3>
+        <p>This page fills itself in every Saturday when the agent can reach your numbers. Give it a Google Analytics 4 key and an Instagram (Meta) token, both free to create, and a place where you save stats from the platforms without an API. From then on it pulls last week, updates every box and tells you where the funnel is leaking. You just read it.</p>
+      </div>
+      <div>
+        <h3>Or do it by hand</h3>
+        <p>Not ready for API keys? You can run this completely by hand. Once a week, open each platform's own analytics, copy the numbers into the boxes and the table (every <code>[number]</code> is a spot for one), and write one line in the Insight column. Fifteen minutes on a Friday and your whole funnel is on one page.</p>
+        <p class="start-tip">Keep a source label on every number, like "GA4" or "copied from TikTok", so you always know where it came from.</p>
+      </div>
+    </div>
+  </aside>
 
   <!-- REGION: funnel. Five columns. One box per source or offer. Boxes never come and go. -->
   <section data-region="funnel">

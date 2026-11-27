@@ -98,6 +98,8 @@ It is plain static HTML with no scripts. Every spot the agent edits is labelled 
 
 From then on the agent fills the same page in place every Saturday: it moves the "week of" range, replaces the numbers, sets each source's status and writes the Insight column. It never rebuilds the page or makes a second copy.
 
+**Two ways to fill it.** Give the agent a GA4 key and an Instagram (Meta) token and it refreshes the page every Saturday on its own. Not ready for API keys? Run it by hand: once a week, copy each platform's numbers into the boxes and the table, keep a source label on every number, and write one line in the Insight column.
+
 ## Files
 
 | File | What it is |
