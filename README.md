@@ -11,11 +11,11 @@ This is a starting point, not a finished product. It was built for one person's 
 
 An agent that pulls last week's numbers straight from the native APIs (Google Analytics, Meta and Instagram, plus the platforms you read by hand), writes them into one living dashboard page every Saturday morning, and says where the funnel is leaking. No connector subscription, no four tabs open on a Friday.
 
-This repo is the same five steps as the guide at [theoptimized.ceo/guides/funnel-digest](https://www.theoptimized.ceo/guides/funnel-digest), with the prompt in [`PROMPT.md`](PROMPT.md) and the pull script in [`native_pull.py`](native_pull.py).
+This repo walks the same five steps as the guide, with the prompt in [`PROMPT.md`](PROMPT.md) and the pull script in [`native_pull.py`](native_pull.py).
 
 ## Features
 
-- Pulls straight from Google Analytics, Instagram, Pinterest and TikTok, no Supermetrics
+- Pulls Google Analytics and Instagram from their own APIs and reads Pinterest and TikTok, no Supermetrics
 - Tells you where the funnel is leaking
 - Refreshes the live dashboard every week
 
@@ -98,5 +98,3 @@ Run it once now rather than waiting for Saturday. The first refresh is a test of
 ## Shared as-is
 
 This is the digest exactly as it runs for one Fractional COO, with names and IDs taken out. No support, no roadmap. Fork it and make it yours.
-
-Made by Ada, Fractional COO, at [The Optimized CEO](https://www.theoptimized.ceo). I build the backend your business actually runs on.

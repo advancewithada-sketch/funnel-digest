@@ -1,6 +1,6 @@
 # The Weekly Funnel Digest: scheduled task prompt
 
-Paste this as the prompt of a Claude Code scheduled task (step 4 of the guide) with every `[bracket]` filled: where your three files live, your GA4 property ID, your Instagram account ID, where the page lives, and your Slack DM channel for the rare alert. Set it for Saturday morning in your timezone. Same prompt as on the guide page: https://www.theoptimized.ceo/guides/funnel-digest
+Paste this as the prompt of a Claude Code scheduled task (step 4 of the guide) with every `[bracket]` filled: where your three files live, your GA4 property ID, your Instagram account ID, where the page lives, and your Slack DM channel for the rare alert. Set it for Saturday morning in your timezone.
 
 ```
 You are refreshing a live marketing dashboard called "[YOUR DASHBOARD NAME]" for [YOUR NAME] ([YOUR BUSINESS], [YOUR WEBSITE]). This is a fresh session with no memory of prior runs.
