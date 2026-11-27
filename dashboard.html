@@ -7,192 +7,208 @@
 <!--
   WEEKLY FUNNEL DIGEST: DASHBOARD TEMPLATE
 
-  Static HTML. No scripts, no database, no external files. The Saturday agent
-  in PROMPT.md reads this page and edits it in place, so the markup is plain
-  and every editable spot is labelled:
+  Static HTML plus one small copy-button script. No database, no external files
+  except the IBM Plex fonts. The Saturday agent in PROMPT.md reads this page and
+  edits it in place, so every editable spot is labelled:
 
-    data-region="..."   a block of the page (title, funnel, kpis, status, notes, footer)
-    data-stage="..."    a funnel column: attract | capture | nurture | convert | keep-refer
-    data-source="..."   one source or offer box inside a column
-    data-status="..."   the box or chip state: live | stale | paused | gap | planned
-    data-field="..."    one value the agent replaces (week-of, refreshed, stale-line, ...)
+    data-region="..."   a block of the page: title | start | funnel | kpis | status | notes | automations | footer
+    data-stage="..."    a funnel column, a <g> inside the hero SVG: attract | capture | nurture | convert | keep-refer
+    data-source="..."   one source or offer box, a <g> inside its column (and its chip in the status row)
+    data-status="..."   the box, row or chip state: live | active | stale | paused | gap | planned
+                          live    = pulled this week (green)
+                          active  = an offer box whose numbers come from GA4 page views (outlined)
+                          stale / paused = kept from an earlier week, or not running (red)
+                          gap     = known gap, nothing fills it (red, dashed)
+                          planned = exists but no live source yet (violet, hatched)
+                        The colour follows the attribute, so changing data-status restyles the box.
+    data-field="..."    one value the agent replaces. In the SVG this is a <text> element:
+                        replace its text only and keep its x, y and font attributes.
     data-kpi="..."      one KPI table row
     data-col="..."      one KPI cell: week | month | quarter | total | insight
 
   Rules for the agent (same as PROMPT.md STEP 2 and STEP 4):
     - Replace text inside data-field elements and KPI cells. Keep every element and attribute.
     - Change data-status when a source goes stale, pauses or comes back.
-    - Do not add, remove or reorder boxes, rows or columns. Gaps keep their box.
+    - Do not add, remove, move or reorder boxes, rows, columns or connector lines. Gaps keep their box.
+    - Keep each SVG line short (about 34 characters) so it stays inside its box.
     - Every number says where it came from: "GA4 (native)", "Instagram (native)", "(browser read)".
+    - Never edit data-region="start" or data-region="automations". They are setup help for people.
 
-  To make it yours: replace every [BRACKET], rename or delete boxes and rows to
-  match your funnel, then publish it once and put its address in PROMPT.md as
-  [WHERE YOUR DASHBOARD PAGE LIVES].
+  To make it yours: replace every [BRACKET] (box titles, keyword badges, table
+  labels), delete boxes you don't have, then publish it once and put its address
+  in PROMPT.md as [WHERE YOUR DASHBOARD PAGE LIVES].
 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
   :root{
-    --bg:#f6f6f4;
-    --panel:#ffffff;
-    --panel-2:#efefec;
-    --line:#dcdcd7;
-    --ink:#1c1c1a;
-    --muted:#5c5c57;
-    --dim:#85857f;
-    --accent:#2f5d8a;
-    --live:#2e7d5b;
-    --live-bg:#e6f2ec;
-    --stale:#b4432f;
-    --stale-bg:#f8e7e3;
-    --paused:#9a6a12;
-    --paused-bg:#f6eedb;
-    --planned:#6b5bb0;
-    --planned-bg:#eeebf7;
-    color-scheme:light;
-  }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --bg:#141414;
-      --panel:#1d1d1c;
-      --panel-2:#262625;
-      --line:#353533;
-      --ink:#ececea;
-      --muted:#a9a9a3;
-      --dim:#7d7d78;
-      --accent:#86b2dc;
-      --live:#6fc79d;
-      --live-bg:#1b2e25;
-      --stale:#ee8a76;
-      --stale-bg:#371f1a;
-      --paused:#e0b45c;
-      --paused-bg:#33291a;
-      --planned:#b2a6ec;
-      --planned-bg:#28243b;
-      color-scheme:dark;
-    }
-  }
-  :root[data-theme="dark"]{
-    --bg:#141414;
-    --panel:#1d1d1c;
-    --panel-2:#262625;
-    --line:#353533;
-    --ink:#ececea;
-    --muted:#a9a9a3;
-    --dim:#7d7d78;
-    --accent:#86b2dc;
-    --live:#6fc79d;
-    --live-bg:#1b2e25;
-    --stale:#ee8a76;
-    --stale-bg:#371f1a;
-    --paused:#e0b45c;
-    --paused-bg:#33291a;
-    --planned:#b2a6ec;
-    --planned-bg:#28243b;
+    --paper:#0f1c2e;
+    --panel:#15304c;
+    --panel-2:#1a3a5c;
+    --grid-line:#1e4368;
+    --ink:#eef4fb;
+    --muted:#8fb0cc;
+    --dim:#5f80a0;
+    --active:#e8a33d;
+    --active-dim:#7a5a28;
+    --stalled:#e2634f;
+    --stalled-dim:#7a3e35;
+    --planned:#b9a6f0;
+    --planned-dim:#3c3457;
+    --fresh:#5ecfa0;
+    --fresh-dim:#1f4a3c;
+    /* one colour per keyword line: the same hue on the line, its badge and the keyword line inside the box it feeds */
+    --kw-1:#4fc8e0;
+    --kw-2:#8b93f0;
+    --kw-3:#e0c04f;
+    --kw-4:#e06fa8;
+    --kw-5:#a8d454;
     color-scheme:dark;
   }
-
   *{ box-sizing:border-box; }
-  html{ -webkit-text-size-adjust:100%; }
+  html{ background:var(--paper); }
   body{
-    margin:0;
-    background:var(--bg);
-    color:var(--ink);
-    font:15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    padding:0 16px;
-    overflow-x:hidden;
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'IBM Plex Sans', system-ui, sans-serif; -webkit-font-smoothing:antialiased;
+    padding-left:16px; padding-right:16px;
+    background-image:
+      linear-gradient(rgba(30,67,104,.35) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(30,67,104,.35) 1px, transparent 1px);
+    background-size:40px 40px; background-position:-1px -1px;
+    background-color:var(--paper);
   }
-  .mono{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  .sheet{ max-width:1180px; margin:0 auto; padding:32px 0 48px; }
+  .mono, code, pre{ font-family:'IBM Plex Mono', ui-monospace, monospace; }
+  .sheet{ max-width:1180px; margin:0 auto; padding-block:36px 56px; min-width:0; }
 
-  /* Title block */
-  .titleblock{ border-bottom:1px solid var(--line); padding-bottom:16px; margin-bottom:28px; }
-  .titleblock h1{ margin:0 0 4px; font-size:22px; line-height:1.25; text-wrap:balance; }
-  .titleblock .sub{ margin:0 0 14px; color:var(--muted); font-size:14px; }
-  .stamp{
-    display:flex; flex-wrap:wrap; gap:4px 20px;
-    font-size:12px; color:var(--muted);
-    background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:8px 12px;
-  }
-  .stamp b{ color:var(--ink); font-weight:600; margin-right:6px; }
-  .stamp .warn{ color:var(--stale); }
+  /* title block + stamp */
+  .titleblock{ display:grid; grid-template-columns:1fr; gap:10px; align-items:start; border-bottom:2px solid var(--panel-2); padding-bottom:12px; margin-bottom:18px; }
+  .titleblock h1{ margin:0 0 2px; font-size:21px; font-weight:700; letter-spacing:0.01em; text-wrap:balance; }
+  .titleblock .sub{ margin:0; color:var(--muted); font-size:13px; }
+  .stamp{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--dim); line-height:1.5; border:1px solid var(--panel-2); padding:6px 10px; border-radius:2px; display:flex; flex-wrap:wrap; gap:2px 16px; background:var(--paper); }
+  .stamp b{ color:var(--muted); font-weight:600; margin-right:6px; }
+  .stamp .warn, .stamp .warn b{ color:var(--stalled); }
 
-  h2{ font-size:13px; font-weight:650; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin:0 0 6px; }
-  .desc{ margin:0 0 16px; color:var(--muted); font-size:14px; max-width:75ch; }
+  /* section titles */
   section{ margin:0 0 40px; }
+  h2.fig-title{ font-size:13px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:var(--active); margin:0 0 4px; }
+  h2.fig-title.fresh{ color:var(--fresh); }
+  .fig-desc{ margin:0 0 16px; color:var(--muted); font-size:14px; max-width:74ch; line-height:1.5; }
 
-  /* Funnel */
-  .funnel{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
-  .stage{ min-width:0; display:flex; flex-direction:column; gap:10px; }
-  .stage > h3{
-    margin:0; font-size:12px; font-weight:650; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
-    padding-bottom:6px; border-bottom:2px solid var(--line);
-  }
-  .box{
-    background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--dim);
-    border-radius:6px; padding:10px 12px; font-size:13px; min-width:0; overflow-wrap:anywhere;
-  }
-  .box h4{ margin:0 0 4px; font-size:14px; font-weight:650; }
-  .box p{ margin:0; color:var(--muted); }
-  .box .origin{ margin-top:6px; font-size:11.5px; font-weight:600; letter-spacing:.02em; }
-  .box[data-status="live"]{ border-left-color:var(--live); }
-  .box[data-status="live"] .origin{ color:var(--live); }
-  .box[data-status="stale"]{ border-left-color:var(--stale); background:var(--stale-bg); }
-  .box[data-status="stale"] .origin{ color:var(--stale); }
-  .box[data-status="paused"]{ border-left-color:var(--paused); background:var(--paused-bg); }
-  .box[data-status="paused"] .origin{ color:var(--paused); }
-  .box[data-status="gap"]{ border:1px dashed var(--stale); border-left:4px dashed var(--stale); }
-  .box[data-status="gap"] .origin{ color:var(--stale); }
-  .box[data-status="planned"]{ border:1px dashed var(--planned); border-left:4px dashed var(--planned); background:var(--planned-bg); }
-  .box[data-status="planned"] .origin{ color:var(--planned); }
+  /* start here card (setup help, the agent never edits it) */
+  .start{ background:var(--panel); border:1px solid var(--panel-2); border-left:3px solid var(--fresh); border-radius:4px; padding:18px 22px; margin:0 0 36px; }
+  .start-k{ font-size:13px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:var(--fresh); margin:0 0 12px; }
+  .start-cols{ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); gap:14px 28px; }
+  .start h3{ margin:0 0 6px; font-size:14.5px; font-weight:600; color:var(--ink); }
+  .start p{ margin:0 0 10px; font-size:14px; line-height:1.6; color:var(--muted); max-width:62ch; }
+  .start code{ font-size:12.5px; color:var(--ink); background:var(--panel-2); padding:1px 5px; border-radius:3px; }
+  .start-tip{ font-family:'IBM Plex Mono', monospace; font-size:12px !important; color:var(--dim) !important; border-top:1px dashed var(--panel-2); padding-top:10px; }
 
-  .key{ display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:16px; font-size:12.5px; color:var(--muted); }
-  .key span{ display:inline-flex; align-items:center; gap:8px; }
-  .key i{ display:inline-block; width:14px; height:14px; border-radius:3px; border:2px solid; }
+  /* hero figure */
+  figure{ margin:0; }
+  .svg-wrap{ background:var(--panel); border:1px solid var(--panel-2); border-radius:6px; padding:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .svg-wrap svg{ display:block; width:100%; max-width:100%; height:auto; min-width:880px; }
+  @media (min-width:900px){ .svg-wrap svg{ min-width:0; } }
+  .scroll-hint{ display:none; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--dim); margin:6px 0 0; }
+  @media (max-width:899px){ .scroll-hint{ display:block; } }
 
-  /* KPI table: scrolls inside its own container, never the page */
-  .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; background:var(--panel); border:1px solid var(--line); border-radius:6px; margin-bottom:16px; }
-  table{ width:100%; min-width:760px; border-collapse:collapse; font-size:13px; }
-  th{ text-align:left; font-size:11px; font-weight:650; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); padding:9px 12px; border-bottom:1px solid var(--line); white-space:nowrap; background:var(--panel-2); }
-  td{ padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
-  tr:last-child td{ border-bottom:0; }
-  td.metric{ font-weight:600; border-left:3px solid var(--dim); }
-  td.metric small{ display:block; font-weight:400; font-size:11.5px; color:var(--dim); margin-top:2px; }
-  td.num{ font-variant-numeric:tabular-nums; min-width:120px; }
-  td.insight{ color:var(--muted); min-width:220px; }
-  tr[data-status="live"] td.metric{ border-left-color:var(--live); }
-  tr[data-status="stale"] td.metric{ border-left-color:var(--stale); }
-  tr[data-status="stale"] td.num{ color:var(--stale); }
-  tr[data-status="gap"] td.metric{ border-left-color:var(--stale); }
+  /* SVG box styling follows data-status, so the agent only changes the attribute */
+  svg .bx{ fill:var(--panel-2); stroke:var(--ink); stroke-width:1.5; }
+  svg [data-status="live"] > .bx{ fill:var(--fresh-dim); stroke:var(--fresh); stroke-width:2; }
+  svg [data-status="live"] > .bx.soft{ fill:var(--panel-2); stroke-width:1.5; }
+  svg [data-status="active"] > .bx.emph{ stroke:var(--active); stroke-width:2.5; }
+  svg [data-status="stale"] > .bx,
+  svg [data-status="paused"] > .bx{ fill:var(--stalled-dim); stroke:var(--stalled); stroke-width:2; }
+  svg [data-status="gap"] > .bx{ fill:var(--stalled-dim); stroke:var(--stalled); stroke-width:2; stroke-dasharray:6 4; }
+  svg [data-status="planned"] > .bx{ fill:url(#hatch-planned); stroke:var(--planned); stroke-width:1.5; stroke-dasharray:5 4; }
+  svg .t-title{ fill:var(--ink); }
+  svg .t-sub{ fill:var(--muted); }
+  svg .t-m{ fill:var(--muted); }
+  svg .t-fresh{ fill:var(--fresh); }
+  svg .t-amb{ fill:var(--active); }
+  svg .t-stalled{ fill:var(--stalled); }
+  svg .t-planned{ fill:var(--planned); }
+  svg .t-st{ fill:var(--fresh); }
+  svg [data-status="stale"] .t-st, svg [data-status="paused"] .t-st, svg [data-status="gap"] .t-st{ fill:var(--stalled); font-weight:600; }
+  svg [data-status="planned"] .t-st{ fill:var(--planned); }
+  svg .t-k1{ fill:var(--kw-1); } svg .t-k2{ fill:var(--kw-2); } svg .t-k3{ fill:var(--kw-3); } svg .t-k4{ fill:var(--kw-4); } svg .t-k5{ fill:var(--kw-5); }
+  svg .badge-key{ fill:var(--active); }
+  svg .bdg{ fill:var(--panel-2); stroke-width:1.25; }
+  svg .b-k1{ stroke:var(--kw-1); } svg .b-k2{ stroke:var(--kw-2); } svg .b-k3{ stroke:var(--kw-3); } svg .b-k4{ stroke:var(--kw-4); } svg .b-k5{ stroke:var(--kw-5); }
+  svg .b-st{ stroke:var(--stalled); } svg .b-amb{ stroke:var(--active); }
+  svg path[class^="ln-"]{ fill:none; }
+  svg .ln-paid{ stroke:var(--stalled); stroke-width:2.25; stroke-dasharray:5 4; }
+  svg .ln-amb{ stroke:var(--active); stroke-width:2.25; }
+  svg .ln-k1, svg .ln-k2, svg .ln-k3, svg .ln-k4, svg .ln-k5{ stroke-width:1.75; stroke-dasharray:4 3; }
+  svg .ln-k1{ stroke:var(--kw-1); } svg .ln-k2{ stroke:var(--kw-2); } svg .ln-k3{ stroke:var(--kw-3); } svg .ln-k4{ stroke:var(--kw-4); } svg .ln-k5{ stroke:var(--kw-5); }
 
-  /* Status chips */
-  .status{ display:flex; flex-wrap:wrap; gap:10px; }
-  .chip{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 9px; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--dim); border-radius:6px; padding:8px 12px; font-size:13px; max-width:100%; }
-  .chip .tag{ font-size:10.5px; font-weight:700; letter-spacing:.04em; border-radius:3px; padding:2px 6px; }
-  .chip .note{ color:var(--muted); }
-  .chip[data-status="live"]{ border-left-color:var(--live); } .chip[data-status="live"] .tag{ color:var(--live); background:var(--live-bg); }
-  .chip[data-status="stale"]{ border-left-color:var(--stale); } .chip[data-status="stale"] .tag{ color:var(--stale); background:var(--stale-bg); }
-  .chip[data-status="paused"]{ border-left-color:var(--paused); } .chip[data-status="paused"] .tag{ color:var(--paused); background:var(--paused-bg); }
-  .chip[data-status="gap"]{ border-left-color:var(--stale); } .chip[data-status="gap"] .tag{ color:var(--stale); background:var(--stale-bg); }
+  figcaption{ margin-top:10px; font-size:13.5px; color:var(--muted); max-width:82ch; line-height:1.55; }
+  .keyrow{ display:flex; flex-wrap:wrap; gap:10px 28px; margin-top:14px; font-size:12.5px; color:var(--muted); }
+  .keyrow .k{ display:flex; align-items:center; gap:8px; }
+  .sw{ display:inline-block; width:14px; height:14px; border-radius:3px; flex:0 0 auto; }
+  .sw.live{ background:var(--fresh-dim); border:2px solid var(--fresh); }
+  .sw.active{ background:var(--panel-2); border:1.5px solid var(--ink); }
+  .sw.stale{ background:var(--stalled-dim); border:2px solid var(--stalled); }
+  .sw.gap{ background:var(--stalled-dim); border:2px dashed var(--stalled); }
+  .sw.planned{ background:var(--planned-dim); border:1.5px dashed var(--planned); }
+  .ln{ display:inline-block; width:20px; height:0; flex:0 0 auto; }
+  .ln.amb{ border-top:2.5px solid var(--active); }
+  .ln.paid{ border-top:2.5px dashed var(--stalled); }
+  .ln.kw{ border-top:2px dashed var(--kw-1); }
 
-  /* Notes */
-  .notes{ background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:6px; padding:18px 20px; }
-  .notes p{ margin:0 0 12px; max-width:80ch; }
+  /* KPI table */
+  .kpi-asof{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--dim); margin:0 0 12px; line-height:1.5; }
+  .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; background:var(--paper); }
+  .kpi-table{ width:100%; min-width:820px; border-collapse:collapse; margin-bottom:14px; font-size:12.5px; }
+  .kpi-table th{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; letter-spacing:0.04em; text-transform:uppercase; color:var(--muted); text-align:left; padding:6px 10px; border-bottom:1px solid var(--panel-2); white-space:nowrap; }
+  .kpi-table td{ padding:10px; border-bottom:1px solid var(--grid-line); vertical-align:top; }
+  .kpi-table td.metric{ font-weight:600; color:var(--ink); padding-left:12px; border-left:3px solid var(--dim); }
+  .kpi-table td.metric .sub{ display:block; font-weight:400; font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--dim); margin-top:2px; }
+  .kpi-table tr[data-status="live"] td.metric{ border-left-color:var(--fresh); }
+  .kpi-table tr[data-status="stale"] td.metric, .kpi-table tr[data-status="gap"] td.metric{ border-left-color:var(--stalled); }
+  .kpi-table tr[data-status="paused"] td.metric{ border-left-color:var(--active); }
+  .kpi-table td.num{ font-family:'IBM Plex Mono', monospace; font-variant-numeric:tabular-nums; color:var(--ink); min-width:120px; }
+  .kpi-table tr[data-status="stale"] td.num{ color:var(--stalled); }
+  .kpi-table td.insight{ color:var(--dim); font-size:11.5px; min-width:200px; max-width:260px; }
+
+  /* status chips */
+  .status-row{ display:flex; flex-wrap:wrap; gap:10px; }
+  .status-chip{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 9px; background:var(--panel); border:1px solid var(--panel-2); border-left:3px solid var(--stalled); border-radius:5px; padding:9px 13px; font-size:12.5px; color:var(--ink); max-width:100%; }
+  .status-chip .sc-tag{ font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:600; color:var(--stalled); background:var(--stalled-dim); border-radius:3px; padding:2px 6px; }
+  .status-chip .sc-delta{ color:var(--dim); font-family:'IBM Plex Mono', monospace; font-size:11px; }
+  .status-chip[data-status="live"]{ border-left-color:var(--fresh); }
+  .status-chip[data-status="live"] .sc-tag{ color:var(--fresh); background:var(--fresh-dim); }
+  .status-chip[data-status="paused"]{ border-left-color:var(--active); }
+  .status-chip[data-status="paused"] .sc-tag{ color:var(--active); background:var(--active-dim); }
+  .status-chip[data-status="planned"]{ border-left-color:var(--planned); }
+  .status-chip[data-status="planned"] .sc-tag{ color:var(--planned); background:var(--planned-dim); }
+
+  /* field notes */
+  .notes{ background:var(--panel); border:1px solid var(--panel-2); border-left:3px solid var(--active); border-radius:4px; padding:20px 24px; }
+  .notes h2{ font-size:13px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:var(--active); margin:0 0 12px; }
+  .notes p{ margin:0 0 12px; font-size:14.5px; line-height:1.65; max-width:80ch; color:var(--ink); }
   .notes p:last-child{ margin-bottom:0; }
 
-  footer{ margin-top:32px; padding-top:14px; border-top:1px solid var(--line); font-size:12.5px; color:var(--dim); display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 16px; }
-  footer a{ color:var(--accent); }
+  /* automations */
+  .autos{ display:grid; gap:10px; }
+  details.auto{ background:var(--panel); border:1px solid var(--panel-2); border-left:3px solid var(--active); border-radius:5px; }
+  details.auto[open]{ border-left-color:var(--fresh); }
+  details.auto summary{ list-style:none; cursor:pointer; display:grid; grid-template-columns:auto 1fr auto; gap:2px 12px; padding:13px 16px; align-items:baseline; }
+  details.auto summary::-webkit-details-marker{ display:none; }
+  details.auto summary::after{ content:"+"; font-family:'IBM Plex Mono', monospace; color:var(--dim); grid-column:3; grid-row:1; font-size:14px; }
+  details.auto[open] summary::after{ content:"−"; }
+  details.auto summary:focus-visible{ outline:2px solid var(--fresh); outline-offset:2px; }
+  .auto-n{ font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:600; color:var(--active); grid-row:1 / span 2; text-transform:uppercase; }
+  .auto-t{ font-weight:600; font-size:14.5px; color:var(--ink); grid-column:2; }
+  .auto-p{ grid-column:2 / span 2; color:var(--muted); font-size:13.5px; line-height:1.55; max-width:78ch; }
+  .auto-body{ padding:0 16px 14px; }
+  .auto-bar{ display:flex; justify-content:space-between; align-items:center; gap:10px; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--dim); margin:0 0 6px; padding-top:10px; border-top:1px dashed var(--panel-2); }
+  button.copy{ font:600 11px 'IBM Plex Mono', monospace; color:var(--fresh); background:var(--fresh-dim); border:1px solid var(--fresh); border-radius:3px; padding:3px 9px; cursor:pointer; flex:0 0 auto; }
+  button.copy:hover{ background:var(--fresh); color:var(--paper); }
+  .auto pre{ margin:0; background:var(--paper); border:1px solid var(--panel-2); border-radius:4px; padding:12px 14px; font-size:12px; line-height:1.55; color:var(--ink); white-space:pre-wrap; overflow-wrap:anywhere; max-height:420px; overflow:auto; }
 
-  @media (max-width:520px){
-    .sheet{ padding-top:20px; }
-    .titleblock h1{ font-size:19px; }
-  }
-.start{background:var(--card,var(--panel,#fff));border:1px solid var(--line,#d8d8d8);border-left:3px solid var(--accent,#3b5b8c);border-radius:0 10px 10px 0;padding:16px 20px;margin:18px 0}
-.start-k{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent,#3b5b8c);font-weight:600;margin-bottom:8px}
-.start-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.start h3{font-size:15px;margin:0 0 4px}
-.start p{margin:0 0 8px;font-size:14px;line-height:1.55}
-.start code{font-size:12px;padding:1px 5px;border-radius:4px;background:var(--wash,rgba(127,127,127,.12))}
-.start-tip{font-size:13px!important;opacity:.85}
-@media (max-width:640px){.start-cols{grid-template-columns:1fr}}
+  footer{ margin-top:36px; padding-top:16px; border-top:1px solid var(--panel-2); font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--dim); display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  footer a{ color:var(--fresh); }
 </style>
 </head>
 <body>
@@ -200,18 +216,22 @@
 
   <!-- REGION: title. The agent moves week-of every Saturday and updates refreshed, sources and stale-line. -->
   <header class="titleblock" data-region="title">
-    <h1 data-field="dashboard-name">[YOUR DASHBOARD NAME]</h1>
-    <p class="sub">[Your business] · the five-stage funnel as it runs today.</p>
-    <div class="stamp mono">
+    <div>
+      <h1><span data-field="dashboard-name">[YOUR DASHBOARD NAME]</span>: live funnel and automation map</h1>
+      <p class="sub">The five-stage funnel as it runs today.</p>
+    </div>
+    <div class="stamp">
+      <div><b>CLIENT</b><span data-field="client">[Your business]</span></div>
+      <div><b>SOURCES</b><span data-field="sources">GA4 · Instagram (native) · [Email platform] · [Ads platform] · [Platform A], [Platform B], [Platform C], [Platform D] (browser read)</span></div>
       <div><b>WEEK OF</b><span data-field="week-of">[YYYY-MM-DD] to [YYYY-MM-DD]</span></div>
       <div><b>REFRESHED</b><span data-field="refreshed">[YYYY-MM-DD]</span></div>
-      <div><b>SOURCES</b><span data-field="sources">GA4 (native) · Instagram (native) · [Email platform] · [Ads platform] · [Platform A], [Platform B] (browser read)</span></div>
-      <div class="warn"><b>STALE</b><span data-field="stale-line">[Platform B] stale since [YYYY-MM-DD]: [short error]</span></div>
+      <div class="warn"><b>STALE</b><span data-field="stale-line">[Platform D] stale since [YYYY-MM-DD]: [short error]</span></div>
+      <div><b>SHEET</b>1 / 1</div>
     </div>
   </header>
 
-  <!-- Start here card: setup help for whoever installs this. The weekly agent never edits it. -->
-  <aside class="start" aria-label="Start here">
+  <!-- REGION: start. Setup help for whoever installs this. The weekly agent never edits it. -->
+  <aside class="start" data-region="start" aria-label="Start here">
     <div class="start-k">Start here: get your numbers in</div>
     <div class="start-cols">
       <div>
@@ -226,159 +246,286 @@
     </div>
   </aside>
 
-  <!-- REGION: funnel. Five columns. One box per source or offer. Boxes never come and go. -->
+  <!-- REGION: funnel. The hero SVG. Five columns, one box per source or offer. Boxes and lines never come and go. -->
   <section data-region="funnel">
-    <h2>The funnel</h2>
-    <p class="desc" data-field="funnel-summary">Where people come from, where they sign up, how they are followed up, where they buy, and whether they come back or refer. Each box says where its number came from.</p>
+    <h2 class="fig-title fresh">Hero: the funnel, intentional</h2>
+    <p class="fig-desc" data-field="funnel-summary">[Your free call] is the prospecting stage. Amber lines are offer logic: [Your free event] leads to a discounted [Your entry offer], [Your lead magnet] loops back to [Your free call], and [Your entry offer] leads into [Your featured offer]. Dashed lines are paid or keyword traffic.</p>
 
-    <div class="funnel">
-
-      <!-- STAGE: attract -->
-      <div class="stage" data-stage="attract">
-        <h3>Attract</h3>
-
-        <div class="box" data-source="website" data-status="live">
-          <h4>[yourwebsite.com]</h4>
-          <p data-field="website-7d">[number] sessions · [number] users (7d)</p>
-          <p data-field="website-top-pages">Top pages (7d): [page] [number] · [page] [number] · [page] [number]</p>
-          <p data-field="website-channels">Direct [number] · Organic Social [number] · Organic Search [number]</p>
-          <p class="origin" data-field="website-origin">GA4 (native) · [number] sessions (30d)</p>
-        </div>
-
-        <div class="box" data-source="instagram" data-status="live">
-          <h4>Instagram</h4>
-          <p data-field="instagram-followers">[number] followers · [+number] (7d)</p>
-          <p data-field="instagram-7d">7d: [number] reach · [number] engaged · [number] interactions</p>
-          <p class="origin" data-field="instagram-origin">Instagram (native) · 30d reach [number]</p>
-        </div>
-
-        <div class="box" data-source="platform-a" data-status="live">
-          <h4>[Platform A]</h4>
-          <p data-field="platform-a-stats">[number] followers · [number] impressions (page label: last 7 days)</p>
-          <p class="origin" data-field="platform-a-origin">(browser read) · [YYYY-MM-DD]</p>
-        </div>
-
-        <div class="box" data-source="platform-b" data-status="stale">
-          <h4>[Platform B]</h4>
-          <p data-field="platform-b-stats">[number] followers · [number] impressions (from [YYYY-MM-DD])</p>
-          <p class="origin" data-field="platform-b-origin">(browser read) · stale since [YYYY-MM-DD]: [short error]</p>
-        </div>
-
-        <div class="box" data-source="paid-ads" data-status="paused">
-          <h4>Paid ads: [Your campaign name]</h4>
-          <p data-field="paid-ads-7d">7d: [currency][number] spend · [number] impressions · [number] clicks · [number]% CTR</p>
-          <p class="origin" data-field="paid-ads-origin">[Ads platform] · paused since [YYYY-MM-DD]</p>
-        </div>
+    <figure>
+      <div class="svg-wrap">
+        <svg viewBox="0 0 1320 800" role="img" aria-labelledby="hero-title hero-desc">
+        <title id="hero-title">The funnel, five stages</title>
+        <desc id="hero-desc">Five columns: Attract, Capture, Nurture, Convert, Keep and refer. One box per source or offer, coloured by status. Amber lines are offer logic between offers. Dashed lines are paid or keyword traffic.</desc>
+        <defs>
+          <pattern id="gridHero" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0 L0 0 0 40" fill="none" stroke="var(--grid-line)" stroke-width="1" opacity="0.5"/></pattern>
+          <pattern id="hatch-planned" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="var(--planned-dim)"/><line x1="0" y1="0" x2="0" y2="8" stroke="var(--planned)" stroke-width="1" opacity="0.35"/></pattern>
+          <marker id="arrow-fresh" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--fresh)"/></marker>
+          <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--active)"/></marker>
+          <marker id="arrow-stalled" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--stalled)"/></marker>
+          <marker id="arrow-k1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--kw-1)"/></marker>
+          <marker id="arrow-k2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--kw-2)"/></marker>
+          <marker id="arrow-k3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--kw-3)"/></marker>
+          <marker id="arrow-k4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--kw-4)"/></marker>
+          <marker id="arrow-k5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--kw-5)"/></marker>
+        </defs>
+        <rect x="0" y="0" width="1320" height="800" fill="url(#gridHero)"/>
+        <g font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" letter-spacing="0.06em" fill="var(--active)">
+          <text x="20" y="26">ATTRACT</text><text x="282" y="26">CAPTURE</text><text x="544" y="26">NURTURE</text><text x="806" y="26">CONVERT</text><text x="1068" y="26">KEEP + REFER</text>
+        </g>
+        <!-- STAGE: attract -->
+        <g data-stage="attract">
+          <g data-source="website" data-status="live">
+            <rect class="bx" x="20" y="60" width="230" height="103" rx="7"/>
+            <text class="t-title" x="34" y="80" font-size="12.5" font-weight="600">[Your website]</text>
+            <text class="t-m" x="34" y="96" font-family="IBM Plex Mono, monospace" font-size="10" data-field="website-7d">[number] sessions · [number] users</text>
+            <text class="t-m" x="34" y="110" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="website-top-page">top 7d: [page] [number]</text>
+            <text class="t-m" x="34" y="124" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="website-top-pages">[page] [number] · [page] [number]</text>
+            <text class="t-m" x="34" y="138" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="website-channels">Direct [number] · Social [number]</text>
+            <text class="t-st" x="34" y="152" font-family="IBM Plex Mono, monospace" font-size="10" data-field="website-origin">LIVE · GA4 native · [number] (30d)</text>
+          </g>
+          <g data-source="platform-a" data-status="live">
+            <rect class="bx" x="20" y="171" width="230" height="61" rx="7"/>
+            <text class="t-title" x="34" y="191" font-size="12.5" font-weight="600">[Platform A]</text>
+            <text class="t-m" x="34" y="207" font-family="IBM Plex Mono, monospace" font-size="10" data-field="platform-a-stats">[number] followers · [number] impr</text>
+            <text class="t-st" x="34" y="221" font-family="IBM Plex Mono, monospace" font-size="10" data-field="platform-a-origin">LIVE · read [YYYY-MM-DD] · 7d</text>
+          </g>
+          <g data-source="instagram" data-status="live">
+            <rect class="bx" x="20" y="240" width="230" height="103" rx="7"/>
+            <text class="t-title" x="34" y="260" font-size="12.5" font-weight="600">Instagram (native)</text>
+            <text class="t-m" x="34" y="276" font-family="IBM Plex Mono, monospace" font-size="10" data-field="instagram-followers">[number] followers · [+number] (7d)</text>
+            <text class="t-m" x="34" y="290" font-family="IBM Plex Mono, monospace" font-size="10" data-field="instagram-7d">[number] reach · [number] engaged</text>
+            <text class="t-m" x="34" y="304" font-family="IBM Plex Mono, monospace" font-size="10" data-field="instagram-interactions">[number] interactions (7d)</text>
+            <text class="t-fresh" x="34" y="318" font-family="IBM Plex Mono, monospace" font-size="10">DM keywords → Capture / Convert</text>
+            <text class="t-st" x="34" y="332" font-family="IBM Plex Mono, monospace" font-size="10" data-field="instagram-origin">LIVE · API · 30d reach [number]</text>
+          </g>
+          <g data-source="paid-ads" data-status="paused">
+            <rect class="bx" x="20" y="351" width="230" height="89" rx="7"/>
+            <text class="t-title" x="34" y="371" font-size="12.5" font-weight="600">Paid ads ([Ads platform])</text>
+            <text class="t-m" x="34" y="387" font-family="IBM Plex Mono, monospace" font-size="10">"[Your campaign name]"</text>
+            <text class="t-m" x="34" y="401" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="paid-ads-spend">7d [currency][number] · [number]% CTR</text>
+            <text class="t-m" x="34" y="415" font-family="IBM Plex Mono, monospace" font-size="10" data-field="paid-ads-7d">[number] impr · [number] clicks</text>
+            <text class="t-st" x="34" y="429" font-family="IBM Plex Mono, monospace" font-size="10" data-field="paid-ads-origin">PAUSED · since [YYYY-MM-DD]</text>
+          </g>
+          <g data-source="blog" data-status="live">
+            <rect class="bx soft" x="20" y="448" width="230" height="103" rx="7"/>
+            <text class="t-title" x="34" y="468" font-size="12.5" font-weight="600">[Your blog]</text>
+            <text class="t-m" x="34" y="484" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="blog-index">/blog index: [number] sessions (30d)</text>
+            <text class="t-m" x="34" y="498" font-family="IBM Plex Mono, monospace" font-size="9.5">TOP PAGES SITE-WIDE (7d):</text>
+            <text class="t-m" x="34" y="512" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="blog-top-1">[page] [number] · [page] [number]</text>
+            <text class="t-m" x="34" y="526" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="blog-top-2">[page] [number] · [page] [number]</text>
+            <text class="t-st" x="34" y="540" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="blog-origin">ALL FIGURES = 7 DAYS (GA4 native)</text>
+          </g>
+          <g data-source="platform-b" data-status="live">
+            <rect class="bx" x="20" y="559" width="230" height="61" rx="7"/>
+            <text class="t-title" x="34" y="579" font-size="12.5" font-weight="600">[Platform B]</text>
+            <text class="t-m" x="34" y="595" font-family="IBM Plex Mono, monospace" font-size="10" data-field="platform-b-stats">[number] subs · [number] views</text>
+            <text class="t-m" x="34" y="609" font-family="IBM Plex Mono, monospace" font-size="10" data-field="platform-b-origin">browser read [YYYY-MM-DD] · [label]</text>
+          </g>
+          <g data-source="platform-c" data-status="live">
+            <rect class="bx" x="20" y="628" width="230" height="75" rx="7"/>
+            <text class="t-title" x="34" y="648" font-size="12.5" font-weight="600">[Platform C]</text>
+            <text class="t-m" x="34" y="664" font-family="IBM Plex Mono, monospace" font-size="10" data-field="platform-c-followers">[number] followers (all time)</text>
+            <text class="t-m" x="34" y="678" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="platform-c-stats">[number] views · [number] likes (7d)</text>
+            <text class="t-amb" x="34" y="692" font-family="IBM Plex Mono, monospace" font-size="10" data-field="platform-c-origin">browser read [YYYY-MM-DD] · 7 days</text>
+          </g>
+          <g data-source="platform-d" data-status="stale">
+            <rect class="bx" x="20" y="711" width="230" height="75" rx="7"/>
+            <text class="t-title" x="34" y="731" font-size="12.5" font-weight="600">[Platform D]</text>
+            <text class="t-m" x="34" y="747" font-family="IBM Plex Mono, monospace" font-size="10" data-field="platform-d-followers">[number] followers ([YYYY-MM-DD])</text>
+            <text class="t-m" x="34" y="761" font-family="IBM Plex Mono, monospace" font-size="10" data-field="platform-d-stats">[number] impr ([YYYY-MM-DD])</text>
+            <text class="t-st" x="34" y="775" font-family="IBM Plex Mono, monospace" font-size="10" data-field="platform-d-origin">STALE since [YYYY-MM-DD]: [error]</text>
+          </g>
+        </g>
+        <!-- STAGE: capture -->
+        <g data-stage="capture">
+          <g data-source="discovery-call" data-status="active">
+            <rect class="bx emph" x="282" y="60" width="230" height="133" rx="7"/>
+            <text class="t-title" x="296" y="82" font-size="14" font-weight="700">[Your free call]</text>
+            <text class="t-sub" x="296" y="98" font-size="10.5">"[What you call it on the site]"</text>
+            <rect class="badge-key" x="296" y="106" width="128" height="17" rx="3"/><text x="360" y="118" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9.5" font-weight="600" fill="#2a1410">PROSPECTING STAGE</text>
+            <text class="t-m" x="296" y="140" font-family="IBM Plex Mono, monospace" font-size="10">booked via [your website]</text>
+            <text class="t-m" x="296" y="154" font-family="IBM Plex Mono, monospace" font-size="10">scheduler</text>
+            <text class="t-k1" x="296" y="168" font-family="IBM Plex Mono, monospace" font-size="10">IG keyword [KEYWORD 1] · live</text>
+            <text class="t-st" x="296" y="182" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="discovery-call-sessions">GA4: [number] 7d · [number] total</text>
+          </g>
+          <g data-source="free-event" data-status="active">
+            <rect class="bx" x="282" y="201" width="230" height="103" rx="7"/>
+            <text class="t-title" x="296" y="221" font-size="12.5" font-weight="600">[Your free event]</text>
+            <text class="t-m" x="296" y="237" font-family="IBM Plex Mono, monospace" font-size="10">"[Event title]"</text>
+            <text class="t-m" x="296" y="251" font-family="IBM Plex Mono, monospace" font-size="9.5">[YYYY-MM-DD] · [your site]/[event]</text>
+            <text class="t-k2" x="296" y="265" font-family="IBM Plex Mono, monospace" font-size="10">IG keyword [KEYWORD 2] · live</text>
+            <text class="t-amb" x="296" y="279" font-family="IBM Plex Mono, monospace" font-size="10">→ [Your entry offer], discounted</text>
+            <text class="t-st" x="296" y="293" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="free-event-sessions">GA4: [number] 7d · [number] 30d</text>
+          </g>
+          <g data-source="lead-magnet" data-status="active">
+            <rect class="bx" x="282" y="312" width="230" height="89" rx="7"/>
+            <text class="t-title" x="296" y="332" font-size="12.5" font-weight="600">[Your lead magnet]</text>
+            <text class="t-m" x="296" y="348" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="lead-magnet-optins">opt-ins: [number] 7d · [number] 30d</text>
+            <text class="t-k3" x="296" y="362" font-family="IBM Plex Mono, monospace" font-size="10">IG keyword [KEYWORD 3] · live</text>
+            <text class="t-amb" x="296" y="376" font-family="IBM Plex Mono, monospace" font-size="10">→ [Your free call]</text>
+            <text class="t-st" x="296" y="390" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="lead-magnet-sessions">GA4: [number] 7d · [number] 30d</text>
+          </g>
+          <g data-source="planned-capture" data-status="planned">
+            <rect class="bx" x="282" y="409" width="230" height="103" rx="7"/>
+            <text class="t-title" x="296" y="429" font-size="12.5" font-weight="600">[Your planned opt-in]</text>
+            <text class="t-m" x="296" y="445" font-family="IBM Plex Mono, monospace" font-size="9.5">page exists at [your website]/[page]</text>
+            <text class="t-m" x="296" y="459" font-family="IBM Plex Mono, monospace" font-size="9.5">captures a lead, tags by result</text>
+            <text class="t-stalled" x="296" y="473" font-family="IBM Plex Mono, monospace" font-size="9.5">not wired to a list yet</text>
+            <text class="t-planned" x="296" y="487" font-family="IBM Plex Mono, monospace" font-size="9.5">IG keyword · NOT LIVE YET</text>
+            <text class="t-fresh" x="296" y="501" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="planned-capture-sessions">GA4: [number] 7d · [number] total</text>
+          </g>
+        </g>
+        <!-- STAGE: nurture -->
+        <g data-stage="nurture">
+          <g data-source="welcome-sequence" data-status="live">
+            <rect class="bx" x="544" y="60" width="230" height="75" rx="7"/>
+            <text class="t-title" x="558" y="80" font-size="12.5" font-weight="600">[Your welcome sequence]</text>
+            <text class="t-m" x="558" y="96" font-family="IBM Plex Mono, monospace" font-size="10" data-field="welcome-sequence-stats">[number] entered · [number]% open</text>
+            <text class="t-st" x="558" y="110" font-family="IBM Plex Mono, monospace" font-size="10" data-field="welcome-sequence-origin">[Email platform] · live · 7d</text>
+            <text class="t-m" x="558" y="124" font-family="IBM Plex Mono, monospace" font-size="9.5">triggers on subscribe</text>
+          </g>
+          <g data-source="lead-magnet-delivery" data-status="live">
+            <rect class="bx" x="544" y="143" width="230" height="75" rx="7"/>
+            <text class="t-title" x="558" y="163" font-size="12.5" font-weight="600">[Your lead magnet] delivery</text>
+            <text class="t-m" x="558" y="179" font-family="IBM Plex Mono, monospace" font-size="10" data-field="lead-magnet-delivery-stats">[number] entered · [number]% open</text>
+            <text class="t-st" x="558" y="193" font-family="IBM Plex Mono, monospace" font-size="10" data-field="lead-magnet-delivery-origin">[Email platform] · live · 7d</text>
+            <text class="t-m" x="558" y="207" font-family="IBM Plex Mono, monospace" font-size="9.5">delivers the download</text>
+          </g>
+          <g data-source="event-confirmation" data-status="live">
+            <rect class="bx" x="544" y="226" width="230" height="75" rx="7"/>
+            <text class="t-title" x="558" y="246" font-size="12.5" font-weight="600">[Your free event] confirmation</text>
+            <text class="t-m" x="558" y="262" font-family="IBM Plex Mono, monospace" font-size="10" data-field="event-confirmation-stats">[number] entered · [number]% open</text>
+            <text class="t-st" x="558" y="276" font-family="IBM Plex Mono, monospace" font-size="10" data-field="event-confirmation-origin">[Email platform] · live · 7d</text>
+            <text class="t-m" x="558" y="290" font-family="IBM Plex Mono, monospace" font-size="9.5">sends the event details</text>
+          </g>
+          <g data-source="newsletter" data-status="live">
+            <rect class="bx" x="544" y="309" width="230" height="75" rx="7"/>
+            <text class="t-title" x="558" y="329" font-size="12.5" font-weight="600">Newsletter</text>
+            <text class="t-m" x="558" y="345" font-family="IBM Plex Mono, monospace" font-size="10" data-field="newsletter-stats">[number] sends (7d)</text>
+            <text class="t-st" x="558" y="359" font-family="IBM Plex Mono, monospace" font-size="10" data-field="newsletter-origin">[Email platform] · live · 7d</text>
+            <text class="t-m" x="558" y="373" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="newsletter-last-send">last send [YYYY-MM-DD]</text>
+          </g>
+        </g>
+        <!-- STAGE: convert -->
+        <g data-stage="convert">
+          <g data-source="core-offer" data-status="active">
+            <rect class="bx" x="806" y="60" width="230" height="75" rx="7"/>
+            <text class="t-title" x="820" y="80" font-size="12.5" font-weight="600">[Your offer]</text>
+            <text class="t-m" x="820" y="96" font-family="IBM Plex Mono, monospace" font-size="10">[what it is, in a few words]</text>
+            <text class="t-m" x="820" y="110" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="core-offer-sales">[number] calls · [number] sales (7d)</text>
+            <text class="t-st" x="820" y="124" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="core-offer-sessions">GA4: [number] 7d · [number] total</text>
+          </g>
+          <g data-source="featured-offer" data-status="active">
+            <rect class="bx emph" x="806" y="143" width="230" height="63" rx="7"/>
+            <text class="t-title" x="820" y="165" font-size="14" font-weight="700">[Your featured offer]</text>
+            <text class="t-amb" x="820" y="181" font-family="IBM Plex Mono, monospace" font-size="10">[the site's featured offer]</text>
+            <text class="t-st" x="820" y="195" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="featured-offer-sessions">GA4: [number] 7d · [number] total</text>
+          </g>
+          <g data-source="entry-offer" data-status="active">
+            <rect class="bx" x="806" y="214" width="230" height="103" rx="7"/>
+            <text class="t-title" x="820" y="234" font-size="12.5" font-weight="600">[Your entry offer]</text>
+            <text class="t-m" x="820" y="250" font-family="IBM Plex Mono, monospace" font-size="10">paid · [length] + [what they get]</text>
+            <text class="t-m" x="820" y="264" font-family="IBM Plex Mono, monospace" font-size="10">[also called on the site]</text>
+            <text class="t-k4" x="820" y="278" font-family="IBM Plex Mono, monospace" font-size="9.5">IG keyword [KEYWORD 4] · live</text>
+            <text class="t-amb" x="820" y="292" font-family="IBM Plex Mono, monospace" font-size="9.5">→ leads into [Your featured offer]</text>
+            <text class="t-st" x="820" y="306" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="entry-offer-sessions">GA4: [number] 7d · [number] total</text>
+          </g>
+          <g data-source="premium-offer" data-status="active">
+            <rect class="bx" x="806" y="325" width="230" height="75" rx="7"/>
+            <text class="t-title" x="820" y="345" font-size="12.5" font-weight="600">[Your premium offer]</text>
+            <text class="t-m" x="820" y="361" font-family="IBM Plex Mono, monospace" font-size="10">[what it is, in a few words]</text>
+            <text class="t-k5" x="820" y="375" font-family="IBM Plex Mono, monospace" font-size="9.5">IG keyword [KEYWORD 5] · live</text>
+            <text class="t-st" x="820" y="389" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="premium-offer-sessions">GA4: [number] 7d · [number] total</text>
+          </g>
+          <g data-source="crm-handoff" data-status="live">
+            <rect class="bx" x="806" y="408" width="230" height="75" rx="7"/>
+            <text class="t-m" x="820" y="430" font-family="IBM Plex Mono, monospace" font-size="10.5" data-field="crm-handoff-stats">[Booking tool] → [Automation tool]</text>
+            <text class="t-m" x="820" y="444" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="crm-handoff-counts">7d: [number] booked · [number] paid</text>
+            <text class="t-m" x="820" y="458" font-family="IBM Plex Mono, monospace" font-size="10" data-field="crm-handoff-last">last payment [YYYY-MM-DD]</text>
+            <text class="t-amb" x="820" y="472" font-family="IBM Plex Mono, monospace" font-size="9.5" data-field="crm-handoff-origin">CONNECTED · [where you count sales]</text>
+          </g>
+        </g>
+        <!-- STAGE: keep-refer -->
+        <g data-stage="keep-refer">
+          <g data-source="referral" data-status="gap">
+            <rect class="bx" x="1068" y="60" width="230" height="89" rx="7"/>
+            <text class="t-title" x="1082" y="80" font-size="12.5" font-weight="600">No referral automation yet</text>
+            <text class="t-m" x="1082" y="96" font-family="IBM Plex Mono, monospace" font-size="10">nothing asks happy clients</text>
+            <text class="t-m" x="1082" y="110" font-family="IBM Plex Mono, monospace" font-size="10">for a referral, and no other</text>
+            <text class="t-m" x="1082" y="124" font-family="IBM Plex Mono, monospace" font-size="10">source fills this box</text>
+            <text class="t-st" x="1082" y="138" font-family="IBM Plex Mono, monospace" font-size="9.5">GAP · real, not just untracked</text>
+          </g>
+          <g data-source="list-health" data-status="live">
+            <rect class="bx" x="1068" y="157" width="230" height="89" rx="7"/>
+            <text class="t-title" x="1082" y="177" font-size="12.5" font-weight="600">List health ([Email platform])</text>
+            <text class="t-m" x="1082" y="193" font-family="IBM Plex Mono, monospace" font-size="10.5" data-field="list-health-size">[number] total · [number] active</text>
+            <text class="t-m" x="1082" y="207" font-family="IBM Plex Mono, monospace" font-size="10" data-field="list-health-sends">[number] sends · [number]% open</text>
+            <text class="t-m" x="1082" y="221" font-family="IBM Plex Mono, monospace" font-size="10" data-field="list-health-rates">[number]% unsub · [number]% bounce</text>
+            <text class="t-st" x="1082" y="235" font-family="IBM Plex Mono, monospace" font-size="10" data-field="list-health-origin">LIVE · last send [YYYY-MM-DD]</text>
+          </g>
+        </g>
+        <!-- CONNECTORS: right angles only, drawn after the boxes. Vertical runs stay in the empty gutters between columns; long horizontal runs use the clear strip above y=60. The agent never moves these. -->
+        <!-- paid ads -> free call (dashed, paid traffic) -->
+        <path class="ln-paid" d="M250,395 L251,395 L251,69 L282,69" marker-end="url(#arrow-stalled)"/>
+        <!-- [KEYWORD 1] -> free call -->
+        <path class="ln-k1" d="M250,252 L256,252 L256,80 L282,80" marker-end="url(#arrow-k1)"/>
+        <!-- [KEYWORD 2] -> free event -->
+        <path class="ln-k2" d="M250,268 L261,268 L261,211 L282,211" marker-end="url(#arrow-k2)"/>
+        <!-- [KEYWORD 3] -> lead magnet -->
+        <path class="ln-k3" d="M250,284 L266,284 L266,322 L282,322" marker-end="url(#arrow-k3)"/>
+        <!-- [KEYWORD 4] skips Nurture: up to the highway above the boxes, across, down into the entry offer -->
+        <path class="ln-k4" d="M250,300 L271,300 L271,40 L792,40 L792,238 L806,238" marker-end="url(#arrow-k4)"/>
+        <!-- [KEYWORD 5] -> premium offer, same highway -->
+        <path class="ln-k5" d="M250,316 L276,316 L276,48 L784,48 L784,351 L806,351" marker-end="url(#arrow-k5)"/>
+        <!-- offer logic: free event -> discounted entry offer -->
+        <path class="ln-amb" d="M512,239 L522,239 L522,34 L796,34 L796,224 L806,224" marker-end="url(#arrow-active)"/>
+        <!-- offer logic: lead magnet loops back to the free call -->
+        <path class="ln-amb" d="M512,352 L528,352 L528,171 L512,171" marker-end="url(#arrow-active)"/>
+        <!-- offer logic: entry offer leads into the featured offer -->
+        <path class="ln-amb" d="M1036,258 L1050,258 L1050,179 L1036,179" marker-end="url(#arrow-active)"/>
+        <!-- BADGES: keyword and offer labels in the clear margin above the boxes, over the column each line enters. -->
+        <g font-family="IBM Plex Mono, monospace" font-size="9.5" font-weight="600">
+          <rect class="bdg b-k1" x="288" y="29" width="68" height="13" rx="3"/><text class="t-k1" x="322" y="38" text-anchor="middle">[KEYWORD 1]</text>
+          <rect class="bdg b-k2" x="362" y="29" width="68" height="13" rx="3"/><text class="t-k2" x="396" y="38" text-anchor="middle">[KEYWORD 2]</text>
+          <rect class="bdg b-k3" x="436" y="29" width="68" height="13" rx="3"/><text class="t-k3" x="470" y="38" text-anchor="middle">[KEYWORD 3]</text>
+          <rect class="bdg b-k4" x="590" y="29" width="68" height="13" rx="3"/><text class="t-k4" x="624" y="38" text-anchor="middle">[KEYWORD 4]</text>
+          <rect class="bdg b-k5" x="664" y="29" width="68" height="13" rx="3"/><text class="t-k5" x="698" y="38" text-anchor="middle">[KEYWORD 5]</text>
+          <rect class="bdg b-st" x="358" y="45" width="112" height="13" rx="3"/><text class="t-st" x="414" y="54" text-anchor="middle">PAID AD · PAUSED</text>
+          <rect class="bdg b-amb" x="618" y="45" width="106" height="13" rx="3"/><text class="t-amb" x="671" y="54" text-anchor="middle">DISCOUNTED OFFER</text>
+          <rect class="bdg b-amb" x="1030" y="45" width="124" height="13" rx="3"/><text class="t-amb" x="1092" y="54" text-anchor="middle">→ [FEATURED OFFER]</text>
+        </g>
+        </svg>
       </div>
-
-      <!-- STAGE: capture -->
-      <div class="stage" data-stage="capture">
-        <h3>Capture</h3>
-
-        <div class="box" data-source="discovery-call" data-status="live">
-          <h4>[Your free call]</h4>
-          <p>Booked from [yourwebsite.com/book]</p>
-          <p data-field="discovery-call-sessions">Page: [number] sessions (7d) · [number] (30d)</p>
-          <p class="origin" data-field="discovery-call-origin">GA4 (native)</p>
-        </div>
-
-        <div class="box" data-source="lead-magnet" data-status="live">
-          <h4>[Your lead magnet]</h4>
-          <p data-field="lead-magnet-optins">[number] opt-ins (7d) · [number] (30d)</p>
-          <p data-field="lead-magnet-sessions">Page: [number] sessions (7d)</p>
-          <p class="origin" data-field="lead-magnet-origin">[Email platform] + GA4 (native)</p>
-        </div>
-
-        <div class="box" data-source="planned-capture" data-status="planned">
-          <h4>[Your planned opt-in]</h4>
-          <p>Page exists, not wired to a list yet</p>
-          <p class="origin" data-field="planned-capture-origin">PLANNED · no live source</p>
-        </div>
+      <p class="scroll-hint">Swipe sideways to see all five stages.</p>
+      <figcaption>Every line runs at right angles through the empty gaps between columns, never through a box. Keyword and offer labels sit in the clear strip above the boxes, over the column each line enters. Each keyword has one colour, used on its line, its label up top and the keyword line inside the box it feeds. [KEYWORD 4] and [KEYWORD 5] skip Nurture, so their lines go up and over it.</figcaption>
+      <div class="keyrow">
+        <div class="k"><span class="sw live"></span>pulled live this week</div>
+        <div class="k"><span class="sw active"></span>offer page, numbers from GA4</div>
+        <div class="k"><span class="sw stale"></span>stale, paused or a real problem</div>
+        <div class="k"><span class="sw gap"></span>known gap</div>
+        <div class="k"><span class="sw planned"></span>planned, no live source</div>
       </div>
-
-      <!-- STAGE: nurture -->
-      <div class="stage" data-stage="nurture">
-        <h3>Nurture</h3>
-
-        <div class="box" data-source="welcome-sequence" data-status="live">
-          <h4>[Your welcome sequence]</h4>
-          <p data-field="welcome-sequence-stats">[number] entered (7d) · [number]% open</p>
-          <p class="origin" data-field="welcome-sequence-origin">[Email platform]</p>
-        </div>
-
-        <div class="box" data-source="lead-magnet-delivery" data-status="live">
-          <h4>[Your lead magnet] delivery</h4>
-          <p data-field="lead-magnet-delivery-stats">[number] entered (7d) · [number]% open</p>
-          <p class="origin" data-field="lead-magnet-delivery-origin">[Email platform]</p>
-        </div>
-
-        <div class="box" data-source="newsletter" data-status="live">
-          <h4>Newsletter</h4>
-          <p data-field="newsletter-stats">[number] sends (7d) · last send [YYYY-MM-DD]</p>
-          <p class="origin" data-field="newsletter-origin">[Email platform]</p>
-        </div>
+      <div class="keyrow" style="margin-top:6px;">
+        <div class="k"><span class="ln amb"></span>offer logic</div>
+        <div class="k"><span class="ln paid"></span>paid traffic</div>
+        <div class="k"><span class="ln kw"></span>keyword traffic (one colour per keyword)</div>
       </div>
-
-      <!-- STAGE: convert -->
-      <div class="stage" data-stage="convert">
-        <h3>Convert</h3>
-
-        <div class="box" data-source="core-offer" data-status="live">
-          <h4>[Your offer]</h4>
-          <p data-field="core-offer-sessions">Page: [number] sessions (7d) · [number] (total)</p>
-          <p data-field="core-offer-sales">[number] calls booked · [number] sales (7d)</p>
-          <p class="origin" data-field="core-offer-origin">GA4 (native) + [where you count sales]</p>
-        </div>
-
-        <div class="box" data-source="entry-offer" data-status="live">
-          <h4>[Your entry offer]</h4>
-          <p data-field="entry-offer-sessions">Page: [number] sessions (7d) · [number] (total)</p>
-          <p class="origin" data-field="entry-offer-origin">GA4 (native)</p>
-        </div>
-      </div>
-
-      <!-- STAGE: keep-refer -->
-      <div class="stage" data-stage="keep-refer">
-        <h3>Keep and refer</h3>
-
-        <div class="box" data-source="referral" data-status="gap">
-          <h4>No referral automation yet</h4>
-          <p>Nothing asks happy clients for a referral</p>
-          <p class="origin">GAP · real, not just untracked</p>
-        </div>
-
-        <div class="box" data-source="list-health" data-status="live">
-          <h4>List health</h4>
-          <p data-field="list-health-size">[number] total · [number] active</p>
-          <p data-field="list-health-rates">[number]% open · [number]% unsub · [number]% bounce (total)</p>
-          <p class="origin" data-field="list-health-origin">[Email platform]</p>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="key">
-      <span><i style="border-color:var(--live)"></i>pulled this week</span>
-      <span><i style="border-color:var(--stale);background:var(--stale-bg)"></i>stale or broken</span>
-      <span><i style="border-color:var(--paused);background:var(--paused-bg)"></i>paused</span>
-      <span><i style="border-color:var(--stale);border-style:dashed"></i>known gap</span>
-      <span><i style="border-color:var(--planned);border-style:dashed;background:var(--planned-bg)"></i>planned, no live source</span>
-    </div>
+    </figure>
   </section>
 
   <!-- REGION: kpis. Six columns, fixed. The agent edits cell text and the row's data-status only. -->
   <section data-region="kpis">
-    <h2>KPI snapshot</h2>
-    <p class="desc mono" data-field="kpi-asof">Refreshed [YYYY-MM-DD]. "This week" = [YYYY-MM-DD] to [YYYY-MM-DD]; "this month" = last 30 days; "this quarter" = last 90 days. Browser reads keep their own page labels.</p>
+    <h2 class="fig-title fresh">KPI snapshot</h2>
+    <p class="kpi-asof" data-field="kpi-asof">Refreshed [YYYY-MM-DD]. "This week" = [YYYY-MM-DD] to [YYYY-MM-DD]; "this month" = last 30 days; "this quarter" = last 90 days. Browser reads keep their own page labels.</p>
 
     <div class="table-wrap">
-      <table>
+      <table class="kpi-table">
         <thead>
           <tr><th>KPI</th><th>This week</th><th>This month</th><th>This quarter</th><th>Total</th><th>Insight</th></tr>
         </thead>
         <tbody>
           <tr data-kpi="email-subscribers" data-status="live">
-            <td class="metric">Email subscribers<small>[Email platform]</small></td>
+            <td class="metric">Email subscribers<span class="sub">[Email platform]</span></td>
             <td class="num" data-col="week">[number] active ([+number])</td>
             <td class="num" data-col="month">[number]</td>
             <td class="num" data-col="quarter">[number]</td>
@@ -386,7 +533,7 @@
             <td class="insight" data-col="insight">[One plain line on what moved and why.]</td>
           </tr>
           <tr data-kpi="email-sends" data-status="live">
-            <td class="metric">Campaigns sent<small>[Email platform]</small></td>
+            <td class="metric">Campaigns sent<span class="sub">[Email platform]</span></td>
             <td class="num" data-col="week">[number]</td>
             <td class="num" data-col="month">[number] across [number]</td>
             <td class="num" data-col="quarter">[number] across [number]</td>
@@ -394,7 +541,7 @@
             <td class="insight" data-col="insight">[One plain line.]</td>
           </tr>
           <tr data-kpi="email-open-rate" data-status="live">
-            <td class="metric">Open rate<small>[Email platform]</small></td>
+            <td class="metric">Open rate<span class="sub">[Email platform]</span></td>
             <td class="num" data-col="week">[number]%</td>
             <td class="num" data-col="month">[number]%</td>
             <td class="num" data-col="quarter">[number]%</td>
@@ -402,7 +549,7 @@
             <td class="insight" data-col="insight">[One plain line.]</td>
           </tr>
           <tr data-kpi="email-unsub-rate" data-status="live">
-            <td class="metric">Unsubscribe and bounce rate<small>[Email platform]</small></td>
+            <td class="metric">Unsubscribe and bounce rate<span class="sub">[Email platform]</span></td>
             <td class="num" data-col="week">[number]% · [number]%</td>
             <td class="num" data-col="month">[number]% · [number]%</td>
             <td class="num" data-col="quarter">[number]% · [number]%</td>
@@ -410,7 +557,7 @@
             <td class="insight" data-col="insight">[One plain line.]</td>
           </tr>
           <tr data-kpi="website-sessions" data-status="live">
-            <td class="metric">Website sessions<small>GA4 (native) · [number] users (7d)</small></td>
+            <td class="metric">Website sessions<span class="sub">GA4 (native) · [number] users (7d)</span></td>
             <td class="num" data-col="week">[number] (vs [number] prior 7d)</td>
             <td class="num" data-col="month">[number]</td>
             <td class="num" data-col="quarter">[number]</td>
@@ -418,7 +565,7 @@
             <td class="insight" data-col="insight">[One plain line. If windows match because the property is new, say so.]</td>
           </tr>
           <tr data-kpi="offer-page-sessions" data-status="live">
-            <td class="metric">Offer and capture page sessions<small>GA4 (native)</small></td>
+            <td class="metric">Offer and capture page sessions<span class="sub">GA4 (native)</span></td>
             <td class="num" data-col="week">[Your lead magnet] [number] · [Your offer] [number]</td>
             <td class="num" data-col="month">[Your lead magnet] [number] · [Your offer] [number]</td>
             <td class="num" data-col="quarter">[Your lead magnet] [number] · [Your offer] [number]</td>
@@ -426,7 +573,7 @@
             <td class="insight" data-col="insight">[One plain line.]</td>
           </tr>
           <tr data-kpi="instagram-followers" data-status="live">
-            <td class="metric">Instagram followers<small>Instagram (native)</small></td>
+            <td class="metric">Instagram followers<span class="sub">Instagram (native)</span></td>
             <td class="num" data-col="week">[number] ([+number])</td>
             <td class="num" data-col="month">[number] ([+number])</td>
             <td class="num" data-col="quarter">n/a (Meta caps at 30 days)</td>
@@ -434,7 +581,7 @@
             <td class="insight" data-col="insight">[One plain line.]</td>
           </tr>
           <tr data-kpi="instagram-reach" data-status="live">
-            <td class="metric">Instagram reach<small>Instagram (native) · unique accounts per window</small></td>
+            <td class="metric">Instagram reach<span class="sub">Instagram (native) · unique accounts per window</span></td>
             <td class="num" data-col="week">[number]</td>
             <td class="num" data-col="month">[number]</td>
             <td class="num" data-col="quarter">n/a (Meta caps at 30 days)</td>
@@ -442,7 +589,7 @@
             <td class="insight" data-col="insight">[One plain line. Reach does not add up across windows.]</td>
           </tr>
           <tr data-kpi="instagram-engaged" data-status="live">
-            <td class="metric">Instagram accounts engaged<small>Instagram (native)</small></td>
+            <td class="metric">Instagram accounts engaged<span class="sub">Instagram (native)</span></td>
             <td class="num" data-col="week">[number]</td>
             <td class="num" data-col="month">[number]</td>
             <td class="num" data-col="quarter">n/a (Meta caps at 30 days)</td>
@@ -450,23 +597,39 @@
             <td class="insight" data-col="insight">[One plain line.]</td>
           </tr>
           <tr data-kpi="platform-a" data-status="live">
-            <td class="metric">[Platform A]<small>(browser read) · [YYYY-MM-DD]</small></td>
+            <td class="metric">[Platform A]<span class="sub">(browser read) · [YYYY-MM-DD]</span></td>
             <td class="num" data-col="week">[number] ([page label])</td>
             <td class="num" data-col="month">n/a (7-day read only)</td>
             <td class="num" data-col="quarter">n/a</td>
             <td class="num" data-col="total">[number] followers</td>
             <td class="insight" data-col="insight">[One plain line. Page labels are quoted, not computed.]</td>
           </tr>
-          <tr data-kpi="platform-b" data-status="stale">
-            <td class="metric">[Platform B]<small>(browser read) · stale since [YYYY-MM-DD]</small></td>
+          <tr data-kpi="platform-b" data-status="live">
+            <td class="metric">[Platform B]<span class="sub">(browser read) · [YYYY-MM-DD]</span></td>
+            <td class="num" data-col="week">[number] ([page label])</td>
+            <td class="num" data-col="month">n/a</td>
+            <td class="num" data-col="quarter">n/a</td>
+            <td class="num" data-col="total">[number] subscribers</td>
+            <td class="insight" data-col="insight">[One plain line. Page labels are quoted, not computed.]</td>
+          </tr>
+          <tr data-kpi="platform-c" data-status="live">
+            <td class="metric">[Platform C]<span class="sub">(browser read) · [YYYY-MM-DD]</span></td>
+            <td class="num" data-col="week">[number] ([page label])</td>
+            <td class="num" data-col="month">n/a (7-day read only)</td>
+            <td class="num" data-col="quarter">n/a</td>
+            <td class="num" data-col="total">[number] followers</td>
+            <td class="insight" data-col="insight">[One plain line.]</td>
+          </tr>
+          <tr data-kpi="platform-d" data-status="stale">
+            <td class="metric">[Platform D]<span class="sub">(browser read) · stale since [YYYY-MM-DD]</span></td>
             <td class="num" data-col="week">[number] (from [YYYY-MM-DD])</td>
             <td class="num" data-col="month">n/a</td>
             <td class="num" data-col="quarter">n/a</td>
             <td class="num" data-col="total">n/a</td>
             <td class="insight" data-col="insight">[Why it is stale, in one line.]</td>
           </tr>
-          <tr data-kpi="paid-ads" data-status="live">
-            <td class="metric">Paid ads: [Your campaign name]<small>[Ads platform]</small></td>
+          <tr data-kpi="paid-ads" data-status="paused">
+            <td class="metric">Paid ads: [Your campaign name]<span class="sub">[Ads platform]</span></td>
             <td class="num" data-col="week">[currency][number] · [number] clicks · [number]% CTR</td>
             <td class="num" data-col="month">[currency][number]</td>
             <td class="num" data-col="quarter">[currency][number]</td>
@@ -474,7 +637,7 @@
             <td class="insight" data-col="insight">[One plain line.]</td>
           </tr>
           <tr data-kpi="biggest-leak" data-status="live">
-            <td class="metric">Biggest drop-off<small>stage to stage</small></td>
+            <td class="metric">Biggest drop-off<span class="sub">stage to stage</span></td>
             <td class="num" data-col="week">[Stage] to [Stage]</td>
             <td class="num" data-col="month">[Stage] to [Stage]</td>
             <td class="num" data-col="quarter">[Stage] to [Stage]</td>
@@ -486,32 +649,141 @@
     </div>
 
     <!-- REGION: status. One chip per source state. The agent updates tag text, note and data-status. -->
-    <div class="status" data-region="status">
-      <div class="chip" data-source="website" data-status="live"><span class="tag">LIVE</span>GA4<span class="note" data-field="status-website">native, pulled [YYYY-MM-DD]</span></div>
-      <div class="chip" data-source="instagram" data-status="live"><span class="tag">LIVE</span>Instagram<span class="note" data-field="status-instagram">native, pulled [YYYY-MM-DD]</span></div>
-      <div class="chip" data-source="platform-a" data-status="live"><span class="tag">LIVE</span>[Platform A]<span class="note" data-field="status-platform-a">browser read [YYYY-MM-DD], ok</span></div>
-      <div class="chip" data-source="platform-b" data-status="stale"><span class="tag">STALE</span>[Platform B]<span class="note" data-field="status-platform-b">since [YYYY-MM-DD]: [short error]</span></div>
-      <div class="chip" data-source="paid-ads" data-status="paused"><span class="tag">PAUSED</span>Paid ads<span class="note" data-field="status-paid-ads">[currency]0 spend in 7 days</span></div>
-      <div class="chip" data-source="referral" data-status="gap"><span class="tag">GAP</span>Referral automation<span class="note">not built yet</span></div>
+    <div class="status-row" data-region="status">
+      <div class="status-chip" data-source="website" data-status="live"><span class="sc-tag">LIVE</span>GA4<span class="sc-delta" data-field="status-website">native, pulled [YYYY-MM-DD]</span></div>
+      <div class="status-chip" data-source="instagram" data-status="live"><span class="sc-tag">LIVE</span>Instagram<span class="sc-delta" data-field="status-instagram">native, pulled [YYYY-MM-DD]</span></div>
+      <div class="status-chip" data-source="platform-a" data-status="live"><span class="sc-tag">LIVE</span>[Platform A]<span class="sc-delta" data-field="status-platform-a">browser read [YYYY-MM-DD], ok</span></div>
+      <div class="status-chip" data-source="platform-d" data-status="stale"><span class="sc-tag">STALE</span>[Platform D]<span class="sc-delta" data-field="status-platform-d">since [YYYY-MM-DD]: [short error]</span></div>
+      <div class="status-chip" data-source="paid-ads" data-status="paused"><span class="sc-tag">PAUSED</span>Paid ads<span class="sc-delta" data-field="status-paid-ads">[currency]0 spend in 7 days</span></div>
+      <div class="status-chip" data-source="referral" data-status="gap"><span class="sc-tag">GAP</span>Referral automation<span class="sc-delta">not built yet</span></div>
+      <div class="status-chip" data-source="planned-capture" data-status="planned"><span class="sc-tag">PLANNED</span>[Your planned opt-in]<span class="sc-delta">page exists, not wired to a list</span></div>
     </div>
   </section>
 
-  <!-- REGION: notes. Short dated paragraphs in plain prose. The agent rewrites these each week to match the numbers above. -->
+  <!-- REGION: notes. Short paragraphs in plain prose. The agent rewrites these each week to match the numbers above. -->
   <section data-region="notes">
-    <h2>Field notes</h2>
     <div class="notes">
+      <h2>Field notes</h2>
       <p data-field="note-leak"><strong>Where it leaks this week.</strong> [One or two sentences naming the stage where numbers fall off most, with the two numbers that show it.]</p>
       <p data-field="note-attract"><strong>Attract.</strong> [What moved in traffic and followers, and from which source.]</p>
       <p data-field="note-capture-nurture"><strong>Capture and nurture.</strong> [Opt-ins, sends and opens in plain words.]</p>
+      <p data-field="note-convert"><strong>Convert.</strong> [Calls booked and sales, and which offer page got the visits.]</p>
       <p data-field="note-stale"><strong>Stale or broken.</strong> [Each stale source, since when, and the short error. Delete the line when nothing is stale.]</p>
+    </div>
+  </section>
+
+  <!-- REGION: automations. What the agent runs and how. Setup help for people: the weekly agent never edits it. -->
+  <section data-region="automations">
+    <h2 class="fig-title">The automations</h2>
+    <p class="fig-desc">Everything this agent runs to keep the page current. Click one to see the exact prompt or command.</p>
+    <div class="autos">
+      <details class="auto" data-automation="saturday">
+        <summary><span class="auto-n">a</span><span class="auto-t">The Saturday refresh</span><span class="auto-p">A Claude Code scheduled task. Runs every Saturday morning in your timezone, so the week it reports on is over. It starts with no memory, so the whole prompt goes in every time. It reads this page, re-pulls every source and edits the numbers in place.</span></summary>
+        <div class="auto-body">
+          <div class="auto-bar"><span>Schedule: weekly, Saturday morning, your timezone. The full prompt from PROMPT.md:</span><button type="button" class="copy">Copy</button></div>
+          <pre>You are refreshing a live marketing dashboard called "[YOUR DASHBOARD NAME]" for [YOUR NAME] ([YOUR BUSINESS], [YOUR WEBSITE]). This is a fresh session with no memory of prior runs.
+
+GOAL: Re-pull last week's numbers from the sources below, then update the SAME dashboard page in place at [WHERE YOUR DASHBOARD PAGE LIVES]. Read the current page first and edit it. Never rebuild it from scratch, never create a second copy.
+
+SETUP (native pulls, no third-party connector):
+a) bash: pip install --break-system-packages -q google-auth requests
+b) Fetch three private files from [WHERE YOU KEEP THEM]: native_pull.py, ga4_key.json (your GA4 service-account key) and meta_token.txt (your Meta reporting token). Write each straight to a scratch file and chmod 600 the two secrets. Never print, log, message, publish or store their contents.
+c) bash: python3 native_pull.py ga4 ga4_key.json [YOUR GA4 PROPERTY ID] &gt; ga4.json. Windows: last 7 days, previous 7, last 30, last 90 and total, plus top pages for the week.
+d) bash: python3 native_pull.py ig meta_token.txt [YOUR INSTAGRAM USER ID] 30 &gt; ig.json. Followers, reach, accounts engaged and interactions for the last 7 and 30 days (Meta caps these windows at 30 days).
+e) If a pull prints {"error": ...}, keep that source's previous numbers, mark them "stale since &lt;date&gt;: &lt;short error&gt;" on the page, and tell me (step 5). Never guess a number.
+f) [PLATFORMS WITHOUT AN API YOU CAN USE, e.g. LinkedIn, TikTok, Pinterest, Substack]: read the latest saved stats from [WHERE YOU SAVE THEM], only if saved within the last 3 days. For each platform marked "ok", show its 2-3 most useful metrics with the platform's own labels and period, labelled "(browser read)". Otherwise keep the previous state and add one honest status line. Copy values exactly; never compute a trend from them.
+
+STEP 1: read the current page before editing anything.
+
+STEP 2: keep the structure. Funnel columns (Attract, Capture, Nurture, Convert, Keep and Refer) and a KPI table with columns KPI | This week | This month | This quarter | Total | Insight. Do not add or remove boxes. Label every source by where the number came from, e.g. "GA4 (native)", "Instagram (native)".
+
+STEP 3: data to refresh (pull live, never reuse old numbers):
+1. Email platform: total and active subscribers; sends, open rate, unsubscribe rate and bounce rate; subscribers added in the last 7 days.
+2. Instagram (ig.json): followers, reach and accounts engaged for 7 and 30 days.
+3. GA4 (ga4.json): sessions, users and views for 7, 30 and 90 days and total. Say plainly if these are still identical because the property is new. Refresh the top pages list and the stats for [YOUR KEY LANDING PAGE].
+4. Paid ads, if any: spend, impressions, clicks and CTR for the last 7 days for [YOUR CAMPAIGN NAME] only. If the connector needs reconnecting, say so on the page rather than guessing.
+5. Other platforms per setup step f.
+
+STEP 4: apply the numbers everywhere they appear: funnel boxes, every column of the KPI table, and the notes in prose. Update the "week of" date range. Where windows are identical, say so and why; never fabricate variation. Instagram quarter and total cells show "n/a (Meta caps at 30 days)" unless you have a real figure. In the Insight column write one plain line per row, and name the stage where numbers fall off most from one step of the funnel to the next.
+
+STEP 5: save the edited page in place. Never put any token or key into the page. Message me (Slack DM, channel_id [YOUR SLACK DM CHANNEL ID]) only if something broke or moved sharply. A routine refresh needs no message.
+
+STEP 6: write one log entry: date, status ok | warning | failed, one line on what was refreshed, and anything stale or broken.</pre>
+        </div>
+      </details>
+      <details class="auto" data-automation="native">
+        <summary><span class="auto-n">b</span><span class="auto-t">Native pulls: GA4 and Instagram</span><span class="auto-p">native_pull.py calls the GA4 Data API and the Meta Graph API itself. No connector. It needs two read-only secrets: ga4_key.json (a Google service-account key) and meta_token.txt (a Meta reporting token). The agent fetches them to a scratch folder, locks them to owner-only and never prints or stores them.</span></summary>
+        <div class="auto-body">
+          <div class="auto-bar"><span>The setup lines from the prompt, then the script's own usage:</span><button type="button" class="copy">Copy</button></div>
+          <pre>SETUP (native pulls, no third-party connector):
+a) bash: pip install --break-system-packages -q google-auth requests
+b) Fetch three private files from [WHERE YOU KEEP THEM]: native_pull.py, ga4_key.json (your GA4 service-account key) and meta_token.txt (your Meta reporting token). Write each straight to a scratch file and chmod 600 the two secrets. Never print, log, message, publish or store their contents.
+c) bash: python3 native_pull.py ga4 ga4_key.json [YOUR GA4 PROPERTY ID] &gt; ga4.json. Windows: last 7 days, previous 7, last 30, last 90 and total, plus top pages for the week.
+d) bash: python3 native_pull.py ig meta_token.txt [YOUR INSTAGRAM USER ID] 30 &gt; ig.json. Followers, reach, accounts engaged and interactions for the last 7 and 30 days (Meta caps these windows at 30 days).
+
+# native_pull.py usage (from the script itself)
+python3 native_pull.py ga4 ga4_key.json PROPERTY_ID [DAYS] &gt; ga4.json
+python3 native_pull.py ig  meta_token.txt IG_USER_ID [DAYS] &gt; ig.json</pre>
+        </div>
+      </details>
+      <details class="auto" data-automation="browser">
+        <summary><span class="auto-n">c</span><span class="auto-t">Browser reads for platforms without an API</span><span class="auto-p">For platforms you can't pull with an API, you save the stats from their own analytics page. The agent uses them only if they were saved in the last 3 days. It copies the numbers exactly with the platform's own labels and period, marks them "(browser read)" and never works out a trend from them.</span></summary>
+        <div class="auto-body">
+          <div class="auto-bar"><span>SETUP f) from the prompt:</span><button type="button" class="copy">Copy</button></div>
+          <pre>f) [PLATFORMS WITHOUT AN API YOU CAN USE, e.g. LinkedIn, TikTok, Pinterest, Substack]: read the latest saved stats from [WHERE YOU SAVE THEM], only if saved within the last 3 days. For each platform marked "ok", show its 2-3 most useful metrics with the platform's own labels and period, labelled "(browser read)". Otherwise keep the previous state and add one honest status line. Copy values exactly; never compute a trend from them.</pre>
+        </div>
+      </details>
+      <details class="auto" data-automation="stale">
+        <summary><span class="auto-n">d</span><span class="auto-t">Stale or failed pulls, and the Slack message</span><span class="auto-p">If a pull fails, the agent keeps last week's number and marks it "stale since &lt;date&gt;: &lt;short error&gt;". It never guesses. It messages you on Slack only when something broke or moved sharply. A normal week sends nothing.</span></summary>
+        <div class="auto-body">
+          <div class="auto-bar"><span>SETUP e) and STEP 5 from the prompt:</span><button type="button" class="copy">Copy</button></div>
+          <pre>e) If a pull prints {"error": ...}, keep that source's previous numbers, mark them "stale since &lt;date&gt;: &lt;short error&gt;" on the page, and tell me (step 5). Never guess a number.
+
+STEP 5: save the edited page in place. Never put any token or key into the page. Message me (Slack DM, channel_id [YOUR SLACK DM CHANNEL ID]) only if something broke or moved sharply. A routine refresh needs no message.</pre>
+        </div>
+      </details>
+      <details class="auto" data-automation="log">
+        <summary><span class="auto-n">e</span><span class="auto-t">The log line</span><span class="auto-p">Every run ends with one log entry: the date, ok, warning or failed, one line on what was refreshed, and anything stale or broken. That is how you check a week you didn't read.</span></summary>
+        <div class="auto-body">
+          <div class="auto-bar"><span>STEP 6 from the prompt:</span><button type="button" class="copy">Copy</button></div>
+          <pre>STEP 6: write one log entry: date, status ok | warning | failed, one line on what was refreshed, and anything stale or broken.</pre>
+        </div>
+      </details>
     </div>
   </section>
 
   <footer data-region="footer">
     <span>Made by Ada from <a href="https://www.theoptimized.ceo">theoptimized.ceo</a></span>
-    <span class="mono">Week of <span data-field="footer-week-of">[YYYY-MM-DD] to [YYYY-MM-DD]</span></span>
+    <span>Week of <span data-field="footer-week-of">[YYYY-MM-DD] to [YYYY-MM-DD]</span></span>
   </footer>
 
 </div>
+<script>
+document.querySelectorAll('button.copy').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var pre = btn.closest('details').querySelector('pre');
+    var text = pre.textContent;
+    function done(ok) {
+      btn.textContent = ok ? 'Copied' : 'Select and copy';
+      setTimeout(function () { btn.textContent = 'Copy'; }, 1600);
+    }
+    function fallback() {
+      var range = document.createRange();
+      range.selectNodeContents(pre);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      done(ok);
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, fallback);
+    } else {
+      fallback();
+    }
+  });
+});
+</script>
 </body>
 </html>

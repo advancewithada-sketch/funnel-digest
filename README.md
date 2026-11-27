@@ -88,11 +88,11 @@ Run it once now rather than waiting for Saturday. The first refresh is a test of
 
 ## The dashboard
 
-[`dashboard.html`](dashboard.html) is a blank copy of the page the agent fills in: five funnel columns (Attract, Capture, Nurture, Convert, Keep and Refer) with one box per source, each labelled by where its number comes from ("GA4 (native)", "Instagram (native)", "(browser read)"), then the KPI table (KPI | This week | This month | This quarter | Total | Insight), status lines for anything stale, paused or missing, field notes, and a "week of" range in the title block. Every number is a `[number]` placeholder.
+[`dashboard.html`](dashboard.html) is a blank copy of the page the agent fills in, drawn as a dark blueprint. The title block carries a stamp with the client, sources, "week of" range and anything stale. Under a "Start here" card, the hero is the funnel as one diagram: five columns (Attract, Capture, Nurture, Convert, Keep + Refer), one box per source or offer, coloured by status (live, stale or paused, known gap, planned), with right-angle lines between them. Solid amber lines are offer logic, dashed lines are paid or keyword traffic, and a legend explains both. Each box says where its number comes from ("GA4 native", "Instagram (native)", "browser read"). Below that: the KPI table (KPI | This week | This month | This quarter | Total | Insight), status chips for anything stale, paused, missing or planned, field notes, and **The automations**: every job this agent runs, in plain words, each one opening to the exact prompt or command with a Copy button. Every number is a `[number]` placeholder.
 
-It is plain static HTML with no scripts. Every spot the agent edits is labelled with a `data-` attribute (`data-stage`, `data-source`, `data-status`, `data-field`, `data-kpi`, `data-col`), and the comment at the top of the file lists them.
+It is static HTML with one small script for the Copy buttons. Every spot the agent edits is labelled with a `data-` attribute (`data-region`, `data-stage`, `data-source`, `data-status`, `data-field`, `data-kpi`, `data-col`), including the `<text>` lines inside the funnel diagram, and the comment at the top of the file lists them. A box's colour follows its `data-status`, so the agent changes one attribute and the box restyles. The "Start here" card and the automations section are for people; the agent never edits them.
 
-1. Replace the `[BRACKETS]` with your own sources and offers. Rename, add or delete boxes and rows now, while you are building it; after that the agent leaves the shape alone.
+1. Replace the `[BRACKETS]` with your own sources, offers and keywords. Delete boxes, lines and rows you don't have now, while you are building it; after that the agent leaves the shape alone.
 2. Publish it once, as a Claude artifact or any page the agent can read and edit in place.
 3. Put its address in [`PROMPT.md`](PROMPT.md) as `[WHERE YOUR DASHBOARD PAGE LIVES]`.
 
@@ -104,7 +104,7 @@ From then on the agent fills the same page in place every Saturday: it moves the
 
 | File | What it is |
 | --- | --- |
-| `dashboard.html` | The dashboard template: funnel columns, KPI table and status lines with `[number]` placeholders and labelled regions the agent edits |
+| `dashboard.html` | The dashboard template: the funnel diagram, KPI table, status chips and the automations section, with `[number]` placeholders and labelled regions the agent edits |
 | `FEATURES.md` | Each feature, why it's there, and which part of the prompt to edit to change it |
 | `PROMPT.md` | The scheduled task prompt, with `[bracket]` placeholders for your details |
 | `native_pull.py` | The pull script: `ga4` mode for the GA4 Data API, `ig` mode for the Meta Graph API, plain JSON out |
