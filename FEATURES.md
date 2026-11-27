@@ -2,7 +2,7 @@
 
 Every feature below is a few lines in [`PROMPT.md`](PROMPT.md). Change the words and you change the behaviour. Run the task once by hand after any edit.
 
-## Pulls straight from Google Analytics, Instagram, Pinterest and TikTok, no Supermetrics
+## Pulls Google Analytics and Instagram from their own APIs and reads Pinterest and TikTok, no Supermetrics
 
 **What it does.** SETUP c) and d) run [`native_pull.py`](native_pull.py) against the GA4 Data API and the Meta Graph API with your own key and token. SETUP f) reads the platforms you don't have an API for (for example Pinterest and TikTok) from stats you saved in the last 3 days, copied exactly and labelled "(browser read)".
 
